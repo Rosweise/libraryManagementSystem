@@ -1,6 +1,14 @@
-# 📚LibrarySystem项目介绍
+<h1 align="center">libraryManagementSystem</h1>
 
-LibrarySystem是一个基于SQLite作为数据库的，在本地终端运行的图书管理系统。LibrarySystem能够实现通过判断管理员账号和普通用户账号来登录不同的操作界面。图书管理员能对图书信息进行增删改查、能查所有的图书信息、能查看所有用户的借阅信息、能修改普通用户的密码。普通用户能查看数据库中的图书信息，能够借阅图书、归还图书、续借图书。如果用户忘记了登录账号的密码可以通过提前设置好的安全口令找回密码。
+<p align="center">
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/cplusplus/cplusplus-original.svg" alt="C++" width="50" height="50"/>
+  &nbsp;&nbsp;&nbsp;
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/sqlite/sqlite-original.svg" alt="SQLite" width="50" height="50"/>
+  &nbsp;&nbsp;&nbsp;
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/github/github-original.svg" alt="GitHub" width="50" height="50"/>
+</p>
+
+[libraryManagementSystem](https://github.com/Rouxiv/libraryManagementSystem)是一个基于SQLite作为数据库的，在本地终端运行的图书管理系统。LibrarySystem能够实现通过判断管理员账号和普通用户账号来登录不同的操作界面。图书管理员能对图书信息进行增删改查、能查所有的图书信息、能查看所有用户的借阅信息、能修改普通用户的密码。普通用户能查看数据库中的图书信息，能够借阅图书、归还图书、续借图书。如果用户忘记了登录账号的密码可以通过提前设置好的安全口令找回密码。
 
 ✅ 适合作为《C语言程序设计》课程设计借鉴。
 
