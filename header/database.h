@@ -105,7 +105,11 @@ public:
     // 图书查询相关操作函数
     [[nodiscard]] std::vector<Book> findBooks(const std::string &keyword, const std::string &sortBy) const;
 
+    [[nodiscard]] std::vector<Book> findBooksWithPagination(const std::string &keyword, const std::string &sortBy, int offset, int limit) const;
+
     [[nodiscard]] std::vector<Book> getAllBooks(const std::string &sortBy) const;
+
+    [[nodiscard]] std::vector<Book> getAllBooksWithPagination(const std::string &sortBy, int offset, int limit) const;
 
     // 借阅管理相关操作函数
     [[nodiscard]] bool borrowBook(const std::string &userId, const std::string &isbn, int daysToBorrow) const;
@@ -121,7 +125,11 @@ public:
     // 管理员查询学生信息功能相关操作函数
     [[nodiscard]] std::vector<User> getAllStudents() const;
 
+    [[nodiscard]] std::vector<User> getAllStudentsWithPagination(int offset, int limit) const;
+
     [[nodiscard]] std::vector<User> findStudents(const std::string &keyword) const;
+
+    [[nodiscard]] std::vector<User> findStudentsWithPagination(const std::string &keyword, int offset, int limit) const;
 
     [[nodiscard]] std::vector<FullBorrowRecord> getFullBorrowRecordsForUser(const std::string &userId) const;
 

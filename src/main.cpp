@@ -34,6 +34,7 @@ void handleFindBook(const DatabaseManager &db); // 查找图书
 void handleUpdateBook(const DatabaseManager &db); // 更新图书信息
 void handleDeleteBook(const DatabaseManager &db);  // 删除图书
 void handleListAllBooks(const DatabaseManager &db);  // 列出所有图书
+void handleListAllBooksWithPagination(const DatabaseManager &db);  // 列出所有图书（带分页）
 
 void handleBorrowBook(const DatabaseManager &db, const User &currentUser);  // 借阅图书
 void handleReturnBook(const DatabaseManager &db, const User &currentUser);  // 归还图书
@@ -549,7 +550,70 @@ void handleFindBook(const DatabaseManager &db) {
     pause();
 }
 
+void handleListAllBooksWithPagination(const DatabaseManager &db) {
+    std::cout << _("sort_by_prompt");
+    int choice = getIntInput();
+    std::string sortBy = "title";
+    if (choice == 2) sortBy = "author";
+    if (choice == 3) sortBy = "isbn";
+    
+    std::cout << _("page_size_prompt") << ": ";
+    int pageSize = getIntInput();
+    if (pageSize <= 0) pageSize = 10; // Default page size
+    
+    int offset = 0;
+    bool hasNextPage = true;
+    
+    while (hasNextPage) {
+        auto books = db.getAllBooksWithPagination(sortBy, offset, pageSize);
+        
+        if (offset == 0) {
+            std::cout << "\n--- " << _("all_books_list") << " ---\n";
+        }
+        
+        if (books.empty()) {
+            if (offset == 0) {
+                std::cout << _("no_books_found") << "\n";
+            } else {
+                std::cout << _("no_more_books") << "\n";
+            }
+            break;
+        }
+        
+        displayBooks(books);
+        
+        // Check if there are more books
+        auto nextPageBooks = db.getAllBooksWithPagination(sortBy, offset + pageSize, 1);
+        hasNextPage = !nextPageBooks.empty();
+        
+        if (hasNextPage) {
+            std::cout << "\n" << _("show_next_page_or_exit") << "\n";
+            std::string input;
+            std::getline(std::cin, input);
+            
+            if (input == "q" || input == "Q") {
+                break;
+            }
+            
+            offset += pageSize;
+        } else {
+            std::cout << _("end_of_list") << "\n";
+        }
+    }
+    pause();
+}
+
 void handleListAllBooks(const DatabaseManager &db) {
+    std::cout << _("pagination_option_prompt") << "\n";
+    std::cout << "1. " << _("show_all_at_once") << "\n";
+    std::cout << "2. " << _("show_with_pagination") << "\n";
+    int paginationChoice = getIntInput();
+    
+    if (paginationChoice == 2) {
+        handleListAllBooksWithPagination(db);
+        return;
+    }
+    
     std::cout << _("sort_by_prompt");
     int choice = getIntInput();
     std::string sortBy = "title";

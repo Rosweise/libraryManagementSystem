@@ -427,6 +427,25 @@ private:
         englishTexts["language_set_to_chinese"] = "Language has been set to Chinese.";
         chineseTexts["language_set_to_english"] = "语言已设置为英文。";
         chineseTexts["language_set_to_chinese"] = "语言已设置为中文。";
+        
+        // Pagination related strings
+        englishTexts["pagination_option_prompt"] = "Choose display option:";
+        englishTexts["show_all_at_once"] = "1. Show all at once";
+        englishTexts["show_with_pagination"] = "2. Show with pagination";
+        englishTexts["page_size_prompt"] = "Enter page size";
+        englishTexts["all_books_list"] = "All Books List";
+        englishTexts["no_more_books"] = "No more books to display.";
+        englishTexts["show_next_page_or_exit"] = "Press Enter for next page, or 'q' to quit: ";
+        englishTexts["end_of_list"] = "End of list reached.";
+        
+        chineseTexts["pagination_option_prompt"] = "选择显示选项:";
+        chineseTexts["show_all_at_once"] = "1. 一次性显示全部";
+        chineseTexts["show_with_pagination"] = "2. 分页显示";
+        chineseTexts["page_size_prompt"] = "输入每页大小";
+        chineseTexts["all_books_list"] = "全部图书列表";
+        chineseTexts["no_more_books"] = "没有更多图书可显示。";
+        chineseTexts["show_next_page_or_exit"] = "按回车键查看下一页，或输入 'q' 退出: ";
+        chineseTexts["end_of_list"] = "已到达列表末尾。";
     }
 
     Language currentLanguage = Language::CHINESE;

@@ -81,11 +81,35 @@ bool DatabaseManager::initialize() {
         );
     )";
 
+    // Define indexes to improve query performance
+    const auto create_users_username_index = R"(CREATE INDEX IF NOT EXISTS idx_users_username ON Users(username);)";
+    const auto create_books_title_index = R"(CREATE INDEX IF NOT EXISTS idx_books_title ON Books(title);)";
+    const auto create_books_author_index = R"(CREATE INDEX IF NOT EXISTS idx_books_author ON Books(author);)";
+    const auto create_books_isbn_index = R"(CREATE INDEX IF NOT EXISTS idx_books_isbn ON Books(isbn);)";
+    const auto create_records_user_index = R"(CREATE INDEX IF NOT EXISTS idx_borrowing_records_user ON BorrowingRecords(userId);)";
+    const auto create_records_book_index = R"(CREATE INDEX IF NOT EXISTS idx_borrowing_records_book ON BorrowingRecords(bookIsbn);)";
+    const auto create_users_name_index = R"(CREATE INDEX IF NOT EXISTS idx_users_name ON Users(name);)";
+    const auto create_users_college_index = R"(CREATE INDEX IF NOT EXISTS idx_users_college ON Users(college);)";
+
     char *err_msg = nullptr;
     if (sqlite3_exec(db_, create_users_table, nullptr, nullptr, &err_msg) != SQLITE_OK ||
         sqlite3_exec(db_, create_books_table, nullptr, nullptr, &err_msg) != SQLITE_OK ||
         sqlite3_exec(db_, create_records_table, nullptr, nullptr, &err_msg) != SQLITE_OK) {
         std::cerr << "SQL error creating tables: " << err_msg << std::endl;
+        sqlite3_free(err_msg);
+        return false;
+    }
+
+    // Create indexes
+    if (sqlite3_exec(db_, create_users_username_index, nullptr, nullptr, &err_msg) != SQLITE_OK ||
+        sqlite3_exec(db_, create_books_title_index, nullptr, nullptr, &err_msg) != SQLITE_OK ||
+        sqlite3_exec(db_, create_books_author_index, nullptr, nullptr, &err_msg) != SQLITE_OK ||
+        sqlite3_exec(db_, create_books_isbn_index, nullptr, nullptr, &err_msg) != SQLITE_OK ||
+        sqlite3_exec(db_, create_records_user_index, nullptr, nullptr, &err_msg) != SQLITE_OK ||
+        sqlite3_exec(db_, create_records_book_index, nullptr, nullptr, &err_msg) != SQLITE_OK ||
+        sqlite3_exec(db_, create_users_name_index, nullptr, nullptr, &err_msg) != SQLITE_OK ||
+        sqlite3_exec(db_, create_users_college_index, nullptr, nullptr, &err_msg) != SQLITE_OK) {
+        std::cerr << "SQL error creating indexes: " << err_msg << std::endl;
         sqlite3_free(err_msg);
         return false;
     }
@@ -102,6 +126,15 @@ bool DatabaseManager::addUser(const User &user, const std::string &password) con
         return false;
     }
 
+    // RAII wrapper for sqlite3_stmt to ensure proper cleanup
+    struct StmtWrapper {
+        sqlite3_stmt* stmt;
+        StmtWrapper(sqlite3_stmt* s) : stmt(s) {}
+        ~StmtWrapper() { if (stmt) sqlite3_finalize(stmt); }
+        sqlite3_stmt* operator->() { return stmt; }
+        operator sqlite3_stmt*() { return stmt; }
+    } stmt_wrapper(stmt);
+
     const std::string hashedPassword = SHA256::hash(password);
     sqlite3_bind_text(stmt, 1, user.id.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 2, user.username.c_str(), -1, SQLITE_STATIC);
@@ -115,17 +148,30 @@ bool DatabaseManager::addUser(const User &user, const std::string &password) con
     if (!success) {
         std::cerr << "Execution failed: " << sqlite3_errmsg(db_) << std::endl;
     }
-    sqlite3_finalize(stmt);
+    // stmt will be automatically finalized by the wrapper
     return success;
 }
 
 bool DatabaseManager::userExists(const std::string &username) const {
     const std::string sql = "SELECT 1 FROM Users WHERE username = ?;";
     sqlite3_stmt *stmt;
-    sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr);
+    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement in userExists: " << sqlite3_errmsg(db_) << std::endl;
+        return false;
+    }
+
+    // RAII wrapper for sqlite3_stmt to ensure proper cleanup
+    struct StmtWrapper {
+        sqlite3_stmt* stmt;
+        StmtWrapper(sqlite3_stmt* s) : stmt(s) {}
+        ~StmtWrapper() { if (stmt) sqlite3_finalize(stmt); }
+        sqlite3_stmt* operator->() { return stmt; }
+        operator sqlite3_stmt*() { return stmt; }
+    } stmt_wrapper(stmt);
+
     sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
     bool exists = (sqlite3_step(stmt) == SQLITE_ROW);
-    sqlite3_finalize(stmt);
+    // stmt will be automatically finalized by the wrapper
     return exists;
 }
 
@@ -138,8 +184,18 @@ User DatabaseManager::authenticateUser(const std::string &username, const std::s
     sqlite3_stmt *stmt;
 
     if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement in authenticateUser: " << sqlite3_errmsg(db_) << std::endl;
         return user;
     }
+
+    // RAII wrapper for sqlite3_stmt to ensure proper cleanup
+    struct StmtWrapper {
+        sqlite3_stmt* stmt;
+        StmtWrapper(sqlite3_stmt* s) : stmt(s) {}
+        ~StmtWrapper() { if (stmt) sqlite3_finalize(stmt); }
+        sqlite3_stmt* operator->() { return stmt; }
+        operator sqlite3_stmt*() { return stmt; }
+    } stmt_wrapper(stmt);
 
     const std::string hashedPassword = SHA256::hash(password);
     sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
@@ -158,7 +214,7 @@ User DatabaseManager::authenticateUser(const std::string &username, const std::s
         user.hasRecoveryToken = (sqlite3_column_type(stmt, 5) != SQLITE_NULL);
     }
 
-    sqlite3_finalize(stmt);
+    // stmt will be automatically finalized by the wrapper
     return user;
 }
 
@@ -278,15 +334,30 @@ bool DatabaseManager::deleteBook(const std::string &isbn) const {
 
 std::vector<Book> DatabaseManager::findBooks(const std::string &keyword, const std::string &sortBy) const {
     std::vector<Book> books;
-    std::string safeSortBy = sortBy;
-    if (safeSortBy != "title" && safeSortBy != "author" && safeSortBy != "isbn") {
-        safeSortBy = "title"; // Default to a safe value
+    
+    // Whitelist allowed sort fields to prevent SQL injection
+    std::string safeSortBy = "title"; // Default to a safe value
+    if (sortBy == "title") {
+        safeSortBy = "title";
+    } else if (sortBy == "author") {
+        safeSortBy = "author";
+    } else if (sortBy == "isbn") {
+        safeSortBy = "isbn";
+    } else if (sortBy == "publisher") {
+        safeSortBy = "publisher";
+    } else if (sortBy == "category") {
+        safeSortBy = "category";
+    } else if (sortBy == "totalCopies") {
+        safeSortBy = "totalCopies";
+    } else if (sortBy == "availableCopies") {
+        safeSortBy = "availableCopies";
     }
-    const std::string sql = "SELECT * FROM Books WHERE title LIKE ? OR author LIKE ? OR isbn LIKE ? ORDER BY " + safeSortBy +
-                      ";";
+    
+    const std::string sql = "SELECT * FROM Books WHERE title LIKE ? OR author LIKE ? OR isbn LIKE ? ORDER BY " + safeSortBy + " COLLATE NOCASE;";
     sqlite3_stmt *stmt;
 
     if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement in findBooks: " << sqlite3_errmsg(db_) << std::endl;
         return books;
     }
 
@@ -312,6 +383,61 @@ std::vector<Book> DatabaseManager::findBooks(const std::string &keyword, const s
 
 std::vector<Book> DatabaseManager::getAllBooks(const std::string &sortBy) const {
     return findBooks("", sortBy);
+}
+
+std::vector<Book> DatabaseManager::findBooksWithPagination(const std::string &keyword, const std::string &sortBy, int offset, int limit) const {
+    std::vector<Book> books;
+    
+    // Whitelist allowed sort fields to prevent SQL injection
+    std::string safeSortBy = "title"; // Default to a safe value
+    if (sortBy == "title") {
+        safeSortBy = "title";
+    } else if (sortBy == "author") {
+        safeSortBy = "author";
+    } else if (sortBy == "isbn") {
+        safeSortBy = "isbn";
+    } else if (sortBy == "publisher") {
+        safeSortBy = "publisher";
+    } else if (sortBy == "category") {
+        safeSortBy = "category";
+    } else if (sortBy == "totalCopies") {
+        safeSortBy = "totalCopies";
+    } else if (sortBy == "availableCopies") {
+        safeSortBy = "availableCopies";
+    }
+    
+    const std::string sql = "SELECT * FROM Books WHERE title LIKE ? OR author LIKE ? OR isbn LIKE ? ORDER BY " + safeSortBy + " COLLATE NOCASE LIMIT ? OFFSET ?;";
+    sqlite3_stmt *stmt;
+
+    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement in findBooksWithPagination: " << sqlite3_errmsg(db_) << std::endl;
+        return books;
+    }
+
+    const std::string like_pattern = "%" + keyword + "%";
+    sqlite3_bind_text(stmt, 1, like_pattern.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, like_pattern.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, like_pattern.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 4, limit);
+    sqlite3_bind_int(stmt, 5, offset);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        Book b;
+        b.isbn = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
+        b.title = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
+        b.author = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2));
+        b.publisher = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3));
+        b.category = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4));
+        b.totalCopies = sqlite3_column_int(stmt, 5);
+        b.availableCopies = sqlite3_column_int(stmt, 6);
+        books.push_back(b);
+    }
+    sqlite3_finalize(stmt);
+    return books;
+}
+
+std::vector<Book> DatabaseManager::getAllBooksWithPagination(const std::string &sortBy, int offset, int limit) const {
+    return findBooksWithPagination("", sortBy, offset, limit);
 }
 
 
@@ -566,7 +692,7 @@ std::vector<User> DatabaseManager::getAllStudents() const {
 std::vector<User> DatabaseManager::findStudents(const std::string &keyword) const {
     std::vector<User> students;
     const auto sql =
-            "SELECT id, username, name, college, className FROM Users WHERE (username LIKE ? OR id LIKE ? OR name LIKE ?) AND role = 'STUDENT' ORDER BY id;";
+            "SELECT id, username, name, college, className FROM Users WHERE (username LIKE ? OR id LIKE ? OR name LIKE ?) AND role = 'STUDENT' ORDER BY id COLLATE NOCASE;";
     sqlite3_stmt *stmt;
     if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) return students;
 
@@ -574,6 +700,63 @@ std::vector<User> DatabaseManager::findStudents(const std::string &keyword) cons
     sqlite3_bind_text(stmt, 1, like_pattern.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 2, like_pattern.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 3, like_pattern.c_str(), -1, SQLITE_STATIC);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        User u;
+        u.id = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
+        u.username = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
+        const char *name_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2));
+        u.name = name_text ? name_text : "";
+        const char *college_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3));
+        u.college = college_text ? college_text : "";
+        const char *class_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4));
+        u.className = class_text ? class_text : "";
+        u.role = "STUDENT";
+        students.push_back(u);
+    }
+    sqlite3_finalize(stmt);
+    return students;
+}
+
+std::vector<User> DatabaseManager::findStudentsWithPagination(const std::string &keyword, int offset, int limit) const {
+    std::vector<User> students;
+    const auto sql =
+            "SELECT id, username, name, college, className FROM Users WHERE (username LIKE ? OR id LIKE ? OR name LIKE ?) AND role = 'STUDENT' ORDER BY id COLLATE NOCASE LIMIT ? OFFSET ?;";
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) return students;
+
+    std::string like_pattern = "%" + keyword + "%";
+    sqlite3_bind_text(stmt, 1, like_pattern.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, like_pattern.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, like_pattern.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 4, limit);
+    sqlite3_bind_int(stmt, 5, offset);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        User u;
+        u.id = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
+        u.username = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
+        const char *name_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2));
+        u.name = name_text ? name_text : "";
+        const char *college_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3));
+        u.college = college_text ? college_text : "";
+        const char *class_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4));
+        u.className = class_text ? class_text : "";
+        u.role = "STUDENT";
+        students.push_back(u);
+    }
+    sqlite3_finalize(stmt);
+    return students;
+}
+
+std::vector<User> DatabaseManager::getAllStudentsWithPagination(int offset, int limit) const {
+    std::vector<User> students;
+    const auto sql = "SELECT id, username, name, college, className FROM Users WHERE role = 'STUDENT' ORDER BY id COLLATE NOCASE LIMIT ? OFFSET ?;";
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) return students;
+
+    sqlite3_bind_int(stmt, 1, limit);
+    sqlite3_bind_int(stmt, 2, offset);
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         User u;
@@ -631,8 +814,24 @@ std::vector<FullBorrowRecord> DatabaseManager::getFullBorrowRecordsForUser(const
 
 std::vector<FullBorrowRecord> DatabaseManager::getAllFullBorrowRecords(const std::string &sortBy) const {
     std::vector<FullBorrowRecord> records;
+    
+    // Whitelist allowed sort fields to prevent SQL injection
     std::string safeSortBy = "u.id"; // Default sort
-    if (sortBy == "dueDate") safeSortBy = "r.dueDate";
+    if (sortBy == "dueDate") {
+        safeSortBy = "r.dueDate";
+    } else if (sortBy == "studentId") {
+        safeSortBy = "u.id";
+    } else if (sortBy == "studentName") {
+        safeSortBy = "u.name";
+    } else if (sortBy == "studentCollege") {
+        safeSortBy = "u.college";
+    } else if (sortBy == "bookTitle") {
+        safeSortBy = "b.title";
+    } else if (sortBy == "borrowDate") {
+        safeSortBy = "r.borrowDate";
+    } else if (sortBy == "isOverdue") {
+        safeSortBy = "is_overdue";
+    }
 
     const std::string sql = R"(
         SELECT r.recordId, u.id, u.name, u.college, u.className, b.title, r.borrowDate, r.dueDate,
@@ -640,7 +839,7 @@ std::vector<FullBorrowRecord> DatabaseManager::getAllFullBorrowRecords(const std
         FROM BorrowingRecords r
         JOIN Users u ON r.userId = u.id
         JOIN Books b ON r.bookIsbn = b.isbn
-        ORDER BY )" + safeSortBy + ";";
+        ORDER BY )" + safeSortBy + " COLLATE NOCASE;";
 
     sqlite3_stmt *stmt;
     if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
