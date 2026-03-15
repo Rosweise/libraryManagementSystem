@@ -5,73 +5,424 @@
   &nbsp;&nbsp;&nbsp;
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/sqlite/sqlite-original.svg" alt="SQLite" width="50" height="50"/>
   &nbsp;&nbsp;&nbsp;
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/github/github-original.svg" alt="GitHub" width="50" height="50"/>
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/cmake/cmake-original.svg" alt="CMake" width="50" height="50"/>
 </p>
 
-[libraryManagementSystem](https://github.com/Rouxiv/libraryManagementSystem)是一个基于SQLite作为数据库的，在本地终端运行的图书管理系统。LibrarySystem能够实现通过判断管理员账号和普通用户账号来登录不同的操作界面。图书管理员能对图书信息进行增删改查、能查所有的图书信息、能查看所有用户的借阅信息、能修改普通用户的密码。普通用户能查看数据库中的图书信息，能够借阅图书、归还图书、续借图书。如果用户忘记了登录账号的密码可以通过提前设置好的安全口令找回密码。
+<p align="center">A cross-platform library management system based on C++20 and SQLite</p>
 
-✅ 适合作为《C语言程序设计》课程设计借鉴。
+<p align="center">
+  <a href="#table-of-contents">Overview</a> •
+  <a href="#features">Features</a> •
+  <a href="#building">Building</a> •
+  <a href="#usage">Usage</a> •
+  <a href="#project-structure">Structure</a>
+</p>
 
-本项目提供C语言程序设计课程设计：图书管理系统设计的参考报告作为你作业的借鉴。
-
-
-
-# 项目构建说明
-
-ibraryManagementSystem包含了SQLite的`sqlite3.h`、`sqlite3.c`文件，用户无需为了编译项目额外下载SQLite。做到拿来即用，用户无需为完成课程作业耗费大量脑细胞。
-
-
-
-## 使用CMake构建项目
-
-首先，你可以使用CMake构建项目，这要求你的计算机上已经安装了CMake应用程序。构建过程：
-
-~~~CMake
-cmake .
-~~~
-
-~~~bash
-make
-~~~
+<p align="center">
+  <strong>🇺🇸 <a href="README.md">English</a></strong> | 
+  <strong>🇨🇳 <a href="docs/README_zh-CN.md">简体中文</a></strong>
+</p>
 
 
+---
 
-## 使用IDE编译
+## Overview
 
-我知道你们在课程上所使用的IDE年纪都比你们还大，如果你用的是VC 6.0或者其他我没有听过的，UI界面走复古风的软件，那么你应该自己导入项目，然后进行编译。如过你所使用的IDE能抽象到连你都玩不明白，那么别指望我了，因为我大概也不会😂。所以，为了方便，你选择使用CMkae比较简单。
+**libraryManagementSystem** is a terminal-based library management system built with SQLite database. Developed using C++20 standard and CMake build system, it supports Windows, Linux, and macOS operating systems.
 
+The system implements role-based access control with two user types:
 
+| Role | Functions |
+|------|-----------|
+| **Administrator** | Book management (CRUD), user management, borrowing record queries |
+| **Student** | Book search, borrow/return/renew books, personal account management |
 
-## 交叉编译
+---
 
-交叉编译用于你手上只有Macbook或者其他运行Linux系统的电脑，你在提交作业的时候你到老师要求你带一个能够在WIndows上运行的EXE程序，那么你应该使用到交叉编译。
+## Features
 
-在MacOS系统上你应该使用Homebrew作为你的包管理器，并运行一下命令下载安装CMake和MinGW-64：
+| Feature | Description |
+|---------|-------------|
+| Cross-Platform | Native support for Windows, Linux, macOS |
+| Zero Dependencies | Built-in SQLite, no external database installation required |
+| Secure Passwords | SHA-256 encrypted password storage |
+| Security Token | Support for password recovery security tokens |
+| Overdue Alerts | Automatic detection and notification of overdue books |
+| Adaptive UI | Tables automatically adjust to terminal width |
 
-~~~bash
-brew install cmake
-brew install mingw-w64v
-~~~
+---
 
-然后，在项目根目录上创建一个build的文件夹（这个文件夹的名字根据个人的兴趣爱好随便起）：
+## Building
 
-~~~bash
-mkdir build
-~~~
+### Prerequisites
 
-然后执行一下命令：
+| Dependency | Version |
+|------------|---------|
+| CMake | >= 3.10 |
+| C++ Compiler | C++20 support |
 
-~~~bash
-cmake .. -DCMAKE_TOOLCHAIN_FILE=../Windows-x86.cmake
-~~~
+Compiler options by platform:
+- **Windows**: MinGW-w64 or Visual Studio 2019+
+- **Linux**: g++ >= 9.0
+- **macOS**: Apple Clang or gcc
 
-之后你就会在这个文件夹里看见一个名为`LibrarySystem.exe`的可执行文件。
+Check CMake installation:
+```bash
+cmake --version
+```
 
-对于Linux系统用户，同样需要下载MinGW-64和CMake：
+---
 
-~~~bash
+### Method 1: CMake Command Line
+
+#### Linux / macOS
+
+```bash
+# Navigate to project directory
+cd /path/to/libraryManagementSystem
+
+# Create build directory and compile
+cmake -B build && cmake --build build
+
+# Run the program
+cd build
+./lib
+```
+
+#### Windows (MinGW-w64)
+
+```bash
+# Navigate to project directory
+cd /d /path/to/libraryManagementSystem
+
+# Create build directory and compile
+cmake -B build -G "MinGW Makefiles" && cmake --build build
+
+# Run the program
+cd build
+lib.exe
+```
+
+#### Windows (Visual Studio)
+
+```bash
+# Create Visual Studio solution
+cmake -B build -G "Visual Studio 17 2022"
+
+# Build (or open build directory in IDE)
+cmake --build build --config Release
+
+# Run the program
+build\Release\lib.exe
+```
+
+---
+
+### Method 2: IDE
+
+| IDE | Steps |
+|-----|-------|
+| **CLion** | Open project → Auto-detect CMake → Click Run |
+| **Visual Studio** | Open folder → Select `lib.exe` as startup → Run |
+
+> **Note**: For legacy IDEs like VC++ 6.0, consider using CMake or modern IDEs
+
+---
+
+### Method 3: Cross-Compilation
+
+Compile Windows executables on macOS/Linux:
+
+#### macOS
+
+```bash
+# Install dependencies
+brew install cmake mingw-w64
+
+# Create build directory
+mkdir build && cd build
+
+# Configure cross-compilation
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/Windows-x86.cmake
+
+# Build
+cmake --build .
+```
+
+#### Linux (Ubuntu/Debian)
+
+```bash
+# Install dependencies
 sudo apt-get update
-sudo apt install -y g++-mingw-w64-x86-64 gcc-mingw-w64-x86-64
-~~~
+sudo apt-get install -y cmake g++-mingw-w64-x86-64 gcc-mingw-w64-x86-64
 
-之后的步骤与MacOS中介绍的步骤一样。
+# Create build directory
+mkdir build && cd build
+
+# Configure cross-compilation
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/Windows-x86.cmake
+
+# Build
+cmake --build .
+```
+
+---
+
+## Program Logic
+
+### Startup Flow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Program Start                           │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Initialize Database (library.db)                │
+│              - Create table structures                       │
+│              - Check for administrator account               │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Main Menu                                 │
+│         1. Login  2. Register  3. Forgot Password  0. Exit  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### User Roles
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                           User Login                                 │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+              ┌───────────────┴───────────────┐
+              │                               │
+              ▼                               ▼
+    ┌──────────────────┐            ┌──────────────────┐
+    │   Admin (ADMIN)  │            │  Student (STUDENT)│
+    └──────────────────┘            └──────────────────┘
+              │                               │
+              ▼                               ▼
+    ┌──────────────────┐            ┌──────────────────┐
+    │   Admin Menu     │            │  Student Menu    │
+    │ 1. Book Mgmt     │            │ 1. Search Books  │
+    │    - Add/Edit/   │            │ 2. Borrow Book   │
+    │      Delete/Find │            │ 3. Return Book   │
+    │ 2. User Mgmt     │            │ 4. Renew Book    │
+    │    - Add User    │            │ 5. My Borrowings │
+    │    - Change Pass │            │ 6. Account Mgmt  │
+    │ 3. Borrow Mgmt   │            │    - View Info   │
+    │    - Query Student│           │    - Edit Info   │
+    │    - All Records │            │    - Change Pass │
+    └──────────────────┘            │    - Set Token   │
+                                    └──────────────────┘
+```
+
+---
+
+### Core Functions
+
+#### 1. Book Management (Admin)
+
+| Function | Description |
+|----------|-------------|
+| Add Book | Add new book with ISBN, title, author, publisher, category, quantity |
+| Edit Book | Modify book information by ISBN |
+| Delete Book | Remove book (requires no active borrowings) |
+| Search Books | Search by keyword (title/author/ISBN) |
+| List All Books | Display all books, sortable by title/author/ISBN |
+
+#### 2. Borrowing Management (Student)
+
+| Function | Description |
+|----------|-------------|
+| Borrow Book | Enter ISBN and borrowing days (1-90 days) |
+| Return Book | Return borrowed book by record ID |
+| Renew Book | Extend borrowing period |
+| View Borrowings | View personal borrowing records |
+
+#### 3. Account Security
+
+| Function | Description |
+|----------|-------------|
+| Change Password | Admin can change any user's password; students can only change their own |
+| Security Token | Set password recovery token for verification |
+| Forgot Password | Reset password using username and security token |
+
+#### 4. Overdue Management
+
+- Automatic detection of overdue books
+- Students are notified of overdue books upon login
+- Admin can view all borrowing records with overdue status
+
+---
+
+## Screenshots
+
+### Main Menu
+
+```
+--- Welcome to Library Management System ---
+1. Login
+2. Student Registration
+3. Forgot Password
+0. Exit
+--------------------------------------------
+Please enter your choice:
+```
+
+### Admin Menu
+
+```
+--- Admin Menu (admin) ---
+1. Book Management - Add/Edit/Delete/Search
+2. User Management - Add User/Change Password
+3. Borrowing Management - Query Student/All Records
+0. Logout
+-----------------------------
+Please enter your choice:
+```
+
+### Student Menu
+
+```
+--- Student Menu (Zhang San) ---
+1. Search Books
+2. Borrow Book
+3. Return Book
+4. Renew Book
+5. View My Borrowings
+6. Account Management (View Info/Change Password/Set Token)
+0. Logout
+---------------------------------
+Please enter your choice:
+```
+
+### Book List
+
+```
++----------------------+------------------------+----------------+--------+--------+
+| ISBN                 | Title                  | Author         | Avail  | Total  |
++----------------------+------------------------+----------------+--------+--------+
+| 978-7-111-40701-0    | Computer Systems       | Randal E. Bryant|   3    |   5    |
+| 978-7-302-33227-9    | C++ Primer Plus        | Stephen Prata  |   2    |   3    |
++----------------------+------------------------+----------------+--------+--------+
+```
+
+### Borrowing Records
+
+```
++--------+----------------------+------------------------+--------------+--------------+
+| Rec ID | ISBN                 | Title                  | Borrow Date  | Due Date     |
++--------+----------------------+------------------------+--------------+--------------+
+| 1      | 978-7-111-40701-0    | Computer Systems       | 2025-03-01   | 2025-03-31   |
++--------+----------------------+------------------------+--------------+--------------+
+```
+
+---
+
+## Project Structure
+
+```
+libraryManagementSystem/
+├── CMakeLists.txt          # CMake build configuration
+├── cmake/
+│   └── Windows-x86.cmake   # Windows cross-compilation toolchain
+├── header/
+│   ├── database.h          # Database manager class declaration
+│   ├── sha256.h            # SHA-256 encryption header
+│   └── utils.h             # Utility functions (clear screen, terminal width, etc.)
+├── src/
+│   ├── main.cpp            # Program entry point and UI logic
+│   ├── database.cpp        # Database operations implementation
+│   └── sha256.cpp          # SHA-256 encryption implementation
+├── lib/
+│   ├── sqlite3.c           # SQLite source code
+│   └── sqlite3.h           # SQLite header file
+├── Build/                  # Build output directory
+└── docs/
+    └── README_zh-CN.md     # Chinese documentation
+    └── CMake 安装教程.md    # CMake installation guide (Chinese)
+```
+
+---
+
+## Tech Stack
+
+| Technology | Description |
+|------------|-------------|
+| **C++20** | Modern C++ features (structured bindings, smart pointers, etc.) |
+| **SQLite3** | Lightweight embedded database, zero configuration |
+| **CMake** | Cross-platform build system |
+| **SHA-256** | Password encryption algorithm |
+
+---
+
+## Usage
+
+### First Run
+
+On first run, the program will automatically:
+
+1. Create `library.db` database file
+2. Initialize table structures (books, users, borrowing records)
+3. Create default administrator account (username: `admin`, password: `admin`)
+
+### Default Account
+
+| Role | Username | Password |
+|------|----------|----------|
+| Admin | admin | admin |
+
+### Student Registration
+
+1. Select `2. Student Registration` from main menu
+2. Enter student ID, name, college, class information
+3. Set login username and password
+4. Registration complete, ready to login
+
+### Password Recovery
+
+1. Select `3. Forgot Password` from main menu
+2. Enter username
+3. Enter previously set security token
+4. Set new password
+
+---
+
+## Notes
+
+| Item | Description |
+|------|-------------|
+| **Database File** | `library.db` is saved in the running directory, do not delete |
+| **Terminal Encoding** | Use UTF-8 encoding (Windows: `chcp 65001`) |
+| **Borrowing Limits** | 1-90 days borrowing period, book quantity cannot be negative |
+| **Deletion Limits** | Books with active borrowings cannot be deleted |
+
+---
+
+## Use Cases
+
+- Reference project for university C++ programming courses
+- Database application development teaching case
+- CMake cross-platform build practice
+- Terminal UI design reference
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## Contributing
+
+Issues and Pull Requests are welcome!
+
+---
+
+<p align="center">Made with ❤️ by <a href="https://github.com/Rouxiv">@Rouxiv</a></p>
