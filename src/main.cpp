@@ -26,6 +26,7 @@
 #include <iomanip>
 #include "../header/database.h"
 #include "../header/utils.h"
+#include "../header/localization.h"
 
 
 void handleAddBook(const DatabaseManager &db);  // 添加图书
@@ -59,7 +60,7 @@ void displayFullBorrowRecords(const std::vector<FullBorrowRecord> &records);  //
 
 
 int pause() {
-    std::cout << "\n按回车键继续...";
+    std::cout << "\n" << _("press_enter_continue");
     std::cin.clear();
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     std::cin.get();
@@ -81,13 +82,13 @@ void showAdminMenu(const DatabaseManager &db, const User &currentUser) {
     int choice;
     do {
         clearScreen();
-        std::cout << "--- 管理员菜单 (" << currentUser.username << ") ---\n";
-        std::cout << "1. 图书管理 - 录入/修改/删除/查找\n";
-        std::cout << "2. 用户管理 - 添加/修改密码\n";
-        std::cout << "3. 借阅管理 - 查询学生/所有记录\n";
-        std::cout << "0. 退出登录\n";
+        std::cout << "--- " << _("admin_menu_title") << " (" << currentUser.username << ") ---\n";
+        std::cout << _("book_management") << "\n";
+        std::cout << _("user_management") << "\n";
+        std::cout << _("borrow_management") << "\n";
+        std::cout << _("logout") << "\n";
         std::cout << "---------------------------------\n";
-        std::cout << "请输入您的选择: ";
+        std::cout << _("enter_choice");
         choice = getIntInput();
 
         switch (choice) {
@@ -95,9 +96,9 @@ void showAdminMenu(const DatabaseManager &db, const User &currentUser) {
                 int bookChoice;
                 do {
                     clearScreen();
-                    std::cout << "--- 图书管理 ---\n";
-                    std::cout << "1. 录入新图书\n2. 修改图书信息\n3. 删除图书\n4. 查找图书\n5. 列出所有图书\n0. 返回\n";
-                    std::cout << "请选择: ";
+                    std::cout << "--- " << _("book_management") << " ---\n";
+                    std::cout << _("add_new_book") << "\n" << _("modify_book_info") << "\n" << _("delete_book") << "\n" << _("search_book") << "\n" << _("list_all_books") << "\n" << _("return_to_main") << "\n";
+                    std::cout << _("enter_choice");
                     bookChoice = getIntInput();
                     switch (bookChoice) {
                         case 1: handleAddBook(db);
@@ -119,9 +120,9 @@ void showAdminMenu(const DatabaseManager &db, const User &currentUser) {
                 int userChoice;
                 do {
                     clearScreen();
-                    std::cout << "--- 用户管理 ---\n";
-                    std::cout << "1. 添加新用户\n2. 修改学生密码\n0. 返回\n";
-                    std::cout << "请选择: ";
+                    std::cout << "--- " << _("user_management") << " ---\n";
+                    std::cout << _("add_new_user") << "\n" << _("change_student_password") << "\n" << _("return_to_main") << "\n";
+                    std::cout << _("enter_choice");
                     userChoice = getIntInput();
                     switch (userChoice) {
                         case 1: handleAddUser(db);
@@ -137,9 +138,9 @@ void showAdminMenu(const DatabaseManager &db, const User &currentUser) {
                 int recordChoice;
                 do {
                     clearScreen();
-                    std::cout << "--- 借阅管理 ---\n";
-                    std::cout << "1. 查询特定学生借阅记录\n2. 列出所有借阅记录\n0. 返回\n";
-                    std::cout << "请选择: ";
+                    std::cout << "--- " << _("borrow_management") << " ---\n";
+                    std::cout << _("query_specific_student") << "\n" << _("list_all_borrow_records") << "\n" << _("return_to_main") << "\n";
+                    std::cout << _("enter_choice");
                     recordChoice = getIntInput();
                     switch (recordChoice) {
                         case 1: handleStudentManagement(db);
@@ -151,9 +152,9 @@ void showAdminMenu(const DatabaseManager &db, const User &currentUser) {
                 } while (recordChoice != 0);
                 break;
             }
-            case 0: std::cout << "正在退出...\n";
+            case 0: std::cout << _("logging_out") << "\n";
                 break;
-            default: std::cout << "无效的选择，请重试。\n";
+            default: std::cout << _("invalid_choice") << "\n";
                 pause();
                 break;
         }
@@ -165,36 +166,36 @@ void showStudentMenu(const DatabaseManager &db, User &currentUser) {
 
     if (currentUser.name.empty() || currentUser.college.empty() || currentUser.className.empty()) {
         clearScreen();
-        std::cout << "欢迎, " << currentUser.username << "!\n";
-        std::cout << "您的个人信息不完整，请先完善信息以使用借阅功能。\n";
+        std::cout << _("welcome_user") << currentUser.username << "!\n";
+        std::cout << _("complete_personal_info") << "\n";
         pause();
         if (!handleUpdateMyInfo(db, currentUser)) {
-            std::cout << "信息更新失败，将退出登录。\n";
+            std::cout << _("info_update_failed") << "\n";
             pause();
             return;
         }
     }
 
     clearScreen();
-    std::cout << "欢迎, " << currentUser.name << "!\n";
+    std::cout << _("welcome_user") << currentUser.name << "!\n";
     if (const auto overdueBooks = db.getOverdueBooksByUser(currentUser.id); !overdueBooks.empty()) {
-        std::cout << "\n!!! 注意: 您有已逾期的图书! !!!\n";
+        std::cout << "\n" << _("overdue_notice") << "\n";
         displayBorrowRecords(overdueBooks);
     }
     pause();
 
     do {
         clearScreen();
-        std::cout << "--- 学生菜单 (" << currentUser.name << ") ---\n";
-        std::cout << "1. 查找图书\n";
-        std::cout << "2. 借阅图书\n";
-        std::cout << "3. 归还图书\n";
-        std::cout << "4. 续借图书\n";
-        std::cout << "5. 查看我的借阅\n";
-        std::cout << "6. 账户管理 (查看信息/修改密码/设置口令)\n";
-        std::cout << "0. 退出登录\n";
+        std::cout << "--- " << _("student_menu_title") << " (" << currentUser.name << ") ---\n";
+        std::cout << _("search_book_prompt") << "\n";
+        std::cout << _("borrow_book") << "\n";
+        std::cout << _("return_book") << "\n";
+        std::cout << _("renew_book") << "\n";
+        std::cout << _("view_my_borrowed") << "\n";
+        std::cout << _("account_management") << "\n";
+        std::cout << _("logout") << "\n";
         std::cout << "-----------------------------\n";
-        std::cout << "请输入您的选择: ";
+        std::cout << _("enter_choice");
         choice = getIntInput();
 
         switch (choice) {
@@ -212,9 +213,9 @@ void showStudentMenu(const DatabaseManager &db, User &currentUser) {
                 int accountChoice;
                 do {
                     clearScreen();
-                    std::cout << "--- 账户管理 ---\n";
-                    std::cout << "1. 查看我的信息\n2. 修改个人信息\n3. 修改密码\n4. 设置/更新找回密码口令\n0. 返回\n";
-                    std::cout << "请选择: ";
+                    std::cout << "--- " << _("account_management") << " ---\n";
+                    std::cout << _("view_my_info") << "\n" << _("update_my_info") << "\n" << _("change_password") << "\n" << _("set_recovery_token") << "\n" << _("return_to_main") << "\n";
+                    std::cout << _("enter_choice");
                     accountChoice = getIntInput();
                     switch (accountChoice) {
                         case 1: handleViewMyInfo(currentUser);
@@ -230,9 +231,9 @@ void showStudentMenu(const DatabaseManager &db, User &currentUser) {
                 } while (accountChoice != 0);
                 break;
             }
-            case 0: std::cout << "正在退出...\n";
+            case 0: std::cout << _("logging_out") << "\n";
                 break;
-            default: std::cout << "无效的选择，请重试。\n";
+            default: std::cout << _("invalid_choice") << "\n";
                 pause();
                 break;
         }
@@ -241,10 +242,10 @@ void showStudentMenu(const DatabaseManager &db, User &currentUser) {
 
 void login(const DatabaseManager &db) {
     std::string username, password;
-    std::cout << "--- 用户登录 ---\n";
-    std::cout << "用户名 (管理员) 或 学号 (学生): ";
+    std::cout << "--- " << _("admin_menu_title") << " ---\n";  // Using admin menu title as generic login title
+    std::cout << _("username_prompt");
     std::getline(std::cin, username);
-    std::cout << "密码: ";
+    std::cout << _("password_prompt");
     std::getline(std::cin, password);
 
     User user = db.authenticateUser(username, password);
@@ -254,21 +255,24 @@ void login(const DatabaseManager &db) {
     } else if (user.role == "STUDENT") {
         showStudentMenu(db, user);
     } else {
-        std::cout << "用户名或密码错误。\n";
+        std::cout << _("login_failed") << "\n";
         pause();
     }
 }
 
 
 int main() {
+    // Initialize localization and load config
+    Localization::getInstance().loadConfig();
+    
     DatabaseManager db("library.db");
     if (!db.initialize()) {
         return 1;
     }
 
     if (!db.userExists("admin")) {
-        std::cout << "首次运行设置: 未找到管理员账户。\n";
-        std::cout << "正在创建默认管理员账户 (用户名: admin, 密码: admin)。\n";
+        std::cout << _("first_run_setup") << "\n";
+        std::cout << _("creating_default_admin") << "\n";
         User adminUser;
         adminUser.id = "admin";
         adminUser.username = "admin";
@@ -281,13 +285,14 @@ int main() {
     int choice;
     do {
         clearScreen();
-        std::cout << "--- 欢迎使用图书管理系统 ---\n";
-        std::cout << "1. 登录\n";
-        std::cout << "2. 学生注册\n";
-        std::cout << "3. 忘记密码\n";
-        std::cout << "0. 退出\n";
+        std::cout << "--- " << _("welcome_main_menu") << " ---\n";
+        std::cout << _("login_option") << "\n";
+        std::cout << _("register_option") << "\n";
+        std::cout << _("forgot_password_option") << "\n";
+        std::cout << _("choose_language") << "\n";
+        std::cout << _("exit_option") << "\n";
         std::cout << "--------------------------------\n";
-        std::cout << "请输入您的选择: ";
+        std::cout << _("enter_choice");
         choice = getIntInput();
 
         switch (choice) {
@@ -297,21 +302,56 @@ int main() {
                 break;
             case 3: handleForgotPassword(db);
                 break;
+            case 4: {
+                // Language selection
+                int langChoice;
+                do {
+                    clearScreen();
+                    std::cout << "--- " << _("choose_language") << " ---\n";
+                    std::cout << _("english_option") << "\n";
+                    std::cout << _("chinese_option") << "\n";
+                    std::cout << _("return_to_main") << "\n";
+                    std::cout << _("enter_choice");
+                    langChoice = getIntInput();
+                    
+                    switch (langChoice) {
+                        case 1: 
+                            Localization::getInstance().setLanguage(Language::ENGLISH);
+                            std::cout << _("language_set_to_english") << "\n";
+                            pause();
+                            break;
+                        case 2:
+                            Localization::getInstance().setLanguage(Language::CHINESE);
+                            std::cout << _("language_set_to_chinese") << "\n";
+                            pause();
+                            break;
+                        case 0:
+                            break; // Return to main menu
+                        default:
+                            std::cout << _("invalid_choice") << "\n";
+                            pause();
+                            break;
+                    }
+                } while (langChoice != 0);
+                
+                // Refresh the main menu after language change to show updated language
+                choice = -1; // Force re-display of main menu with new language
+            }
             case 0: break;
-            default: std::cout << "无效的选择，请重试。\n";
+            default: std::cout << _("invalid_choice") << "\n";
                 pause();
                 break;
         }
     } while (choice != 0);
 
-    std::cout << "感谢使用，再见!\n";
+    std::cout << _("exiting") << "\n";
     return 0;
 }
 
 
 void displayBooks(const std::vector<Book> &books) {
     if (books.empty()) {
-        std::cout << "未找到相关图书。\n";
+        std::cout << _("no_books_found") << "\n";
         return;
     }
 
@@ -330,11 +370,11 @@ void displayBooks(const std::vector<Book> &books) {
             << "+" << std::string(availWidth + 1, '-')
             << "+" << std::string(totalWidth + 1, '-') << "+\n";
 
-    std::cout << "| " << formatCell("ISBN", isbnWidth)
-            << "| " << formatCell("书名", titleWidth)
-            << "| " << formatCell("作者", authorWidth)
-            << "| " << formatCell("可借", availWidth)
-            << "| " << formatCell("总数", totalWidth) << "|\n";
+    std::cout << "| " << formatCell(_("book_table_header_isbn"), isbnWidth)
+            << "| " << formatCell(_("book_table_header_title"), titleWidth)
+            << "| " << formatCell(_("book_table_header_author"), authorWidth)
+            << "| " << formatCell(_("book_table_header_available"), availWidth)
+            << "| " << formatCell(_("book_table_header_total"), totalWidth) << "|\n";
 
     std::cout << "+" << std::string(isbnWidth + 1, '-')
             << "+" << std::string(titleWidth + 1, '-')
@@ -359,7 +399,7 @@ void displayBooks(const std::vector<Book> &books) {
 
 void displayBorrowRecords(const std::vector<BorrowRecord> &records) {
     if (records.empty()) {
-        std::cout << "没有借阅记录。\n";
+        std::cout << _("no_borrow_records") << "\n";
         return;
     }
 
@@ -377,11 +417,11 @@ void displayBorrowRecords(const std::vector<BorrowRecord> &records) {
             << "+" << std::string(borrowDateWidth + 1, '-')
             << "+" << std::string(dueDateWidth + 1, '-') << "+\n";
 
-    std::cout << "| " << formatCell("记录ID", idWidth)
-            << "| " << formatCell("ISBN", isbnWidth)
-            << "| " << formatCell("书名", titleWidth)
-            << "| " << formatCell("借阅日期", borrowDateWidth)
-            << "| " << formatCell("应还日期", dueDateWidth) << "|\n";
+    std::cout << "| " << formatCell(_("borrow_table_header_record_id"), idWidth)
+            << "| " << formatCell(_("book_table_header_isbn"), isbnWidth)
+            << "| " << formatCell(_("book_table_header_title"), titleWidth)
+            << "| " << formatCell(_("borrow_table_header_borrow_date"), borrowDateWidth)
+            << "| " << formatCell(_("borrow_table_header_due_date"), dueDateWidth) << "|\n";
 
     std::cout << "+" << std::string(idWidth + 1, '-')
             << "+" << std::string(isbnWidth + 1, '-')
@@ -406,7 +446,7 @@ void displayBorrowRecords(const std::vector<BorrowRecord> &records) {
 
 void displayStudents(const std::vector<User> &students) {
     if (students.empty()) {
-        std::cout << "系统中没有学生用户。\n";
+        std::cout << _("no_students") << "\n";
         return;
     }
     const int termWidth = getTerminalWidth();
@@ -417,8 +457,8 @@ void displayStudents(const std::vector<User> &students) {
 
     std::cout << "+" << std::string(idWidth + 1, '-') << "+" << std::string(nameWidth + 1, '-') << "+" <<
             std::string(collegeWidth + 1, '-') << "+" << std::string(classWidth + 1, '-') << "+\n";
-    std::cout << "| " << formatCell("学号", idWidth) << "| " << formatCell("姓名", nameWidth) << "| " <<
-            formatCell("学院", collegeWidth) << "| " << formatCell("班级", classWidth) << "|\n";
+    std::cout << "| " << formatCell(_("student_table_header_id"), idWidth) << "| " << formatCell(_("student_table_header_name"), nameWidth) << "| " <<
+            formatCell(_("student_table_header_college"), collegeWidth) << "| " << formatCell(_("student_table_header_class"), classWidth) << "|\n";
     std::cout << "+" << std::string(idWidth + 1, '-') << "+" << std::string(nameWidth + 1, '-') << "+" <<
             std::string(collegeWidth + 1, '-') << "+" << std::string(classWidth + 1, '-') << "+\n";
     for (const auto &s: students) {
@@ -431,7 +471,7 @@ void displayStudents(const std::vector<User> &students) {
 
 void displayFullBorrowRecords(const std::vector<FullBorrowRecord> &records) {
     if (records.empty()) {
-        std::cout << "没有找到任何借阅记录。\n";
+        std::cout << _("no_borrow_records_found") << "\n";
         return;
     }
     const int termWidth = getTerminalWidth();
@@ -449,10 +489,10 @@ void displayFullBorrowRecords(const std::vector<FullBorrowRecord> &records) {
             << "+" << std::string(borrowDateWidth + 1, '-') << "+" << std::string(dueDateWidth + 1, '-')
             << "+" << std::string(overdueWidth + 1, '-') << "+\n";
 
-    std::cout << "| " << formatCell("学号", idWidth) << "| " << formatCell("姓名", nameWidth)
-            << "| " << formatCell("学院", collegeWidth) << "| " << formatCell("书名", titleWidth)
-            << "| " << formatCell("借阅日期", borrowDateWidth) << "| " << formatCell("应还日期", dueDateWidth)
-            << "| " << formatCell("逾期", overdueWidth) << "|\n";
+    std::cout << "| " << formatCell(_("full_borrow_table_header_student_id"), idWidth) << "| " << formatCell(_("full_borrow_table_header_name"), nameWidth)
+            << "| " << formatCell(_("full_borrow_table_header_college"), collegeWidth) << "| " << formatCell(_("full_borrow_table_header_title"), titleWidth)
+            << "| " << formatCell(_("borrow_table_header_borrow_date"), borrowDateWidth) << "| " << formatCell(_("borrow_table_header_due_date"), dueDateWidth)
+            << "| " << formatCell(_("full_borrow_table_header_overdue"), overdueWidth) << "|\n";
 
     std::cout << "+" << std::string(idWidth + 1, '-') << "+" << std::string(nameWidth + 1, '-')
             << "+" << std::string(collegeWidth + 1, '-') << "+" << std::string(titleWidth + 1, '-')
@@ -466,7 +506,7 @@ void displayFullBorrowRecords(const std::vector<FullBorrowRecord> &records) {
                 << "| " << formatCell(rec.bookTitle, titleWidth)
                 << "| " << formatCell(rec.borrowDate, borrowDateWidth)
                 << "| " << formatCell(rec.dueDate, dueDateWidth)
-                << "| " << formatCell(rec.isOverdue ? "是" : "否", overdueWidth) << "|\n";
+                << "| " << formatCell(rec.isOverdue ? _("yes") : _("no"), overdueWidth) << "|\n";
     }
     std::cout << "+" << std::string(idWidth + 1, '-') << "+" << std::string(nameWidth + 1, '-')
             << "+" << std::string(collegeWidth + 1, '-') << "+" << std::string(titleWidth + 1, '-')
@@ -477,32 +517,32 @@ void displayFullBorrowRecords(const std::vector<FullBorrowRecord> &records) {
 
 void handleAddBook(const DatabaseManager &db) {
     Book b;
-    std::cout << "--- 录入新图书 ---\n";
-    std::cout << "ISBN: ";
+    std::cout << "--- " << _("add_new_book") << " ---\n";
+    std::cout << _("isbn_prompt");
     std::getline(std::cin, b.isbn);
-    std::cout << "书名: ";
+    std::cout << _("title_prompt");
     std::getline(std::cin, b.title);
-    std::cout << "作者: ";
+    std::cout << _("author_prompt");
     std::getline(std::cin, b.author);
-    std::cout << "出版社: ";
+    std::cout << _("publisher_prompt");
     std::getline(std::cin, b.publisher);
-    std::cout << "分类: ";
+    std::cout << _("category_prompt");
     std::getline(std::cin, b.category);
-    std::cout << "总数量: ";
+    std::cout << _("total_copies_prompt");
     b.totalCopies = getIntInput();
     b.availableCopies = b.totalCopies;
 
     if (db.addBook(b)) {
-        std::cout << "图书录入成功!\n";
+        std::cout << _("book_added_success") << "\n";
     } else {
-        std::cout << "录入失败。ISBN可能已存在。\n";
+        std::cout << _("book_add_failed") << "\n";
     }
     pause();
 }
 
 void handleFindBook(const DatabaseManager &db) {
     std::string keyword;
-    std::cout << "输入查找关键词 (书名/作者/ISBN): ";
+    std::cout << _("search_keyword_prompt");
     std::getline(std::cin, keyword);
     auto books = db.findBooks(keyword, "title");
     displayBooks(books);
@@ -510,7 +550,7 @@ void handleFindBook(const DatabaseManager &db) {
 }
 
 void handleListAllBooks(const DatabaseManager &db) {
-    std::cout << "选择排序方式 (1:书名, 2:作者, 3:ISBN): ";
+    std::cout << _("sort_by_prompt");
     int choice = getIntInput();
     std::string sortBy = "title";
     if (choice == 2) sortBy = "author";
@@ -524,29 +564,29 @@ void handleListAllBooks(const DatabaseManager &db) {
 
 void handleUpdateBook(const DatabaseManager &db) {
     std::string isbn;
-    std::cout << "输入要修改图书的ISBN: ";
+    std::cout << _("modify_isbn_prompt");
     std::getline(std::cin, isbn);
 
     auto books = db.findBooks(isbn, "isbn");
     if (books.empty() || books[0].isbn != isbn) {
-        std::cout << "未找到此ISBN的图书。\n";
+        std::cout << _("book_not_found") << "\n";
         pause();
         return;
     }
 
     Book b = books[0];
-    std::cout << "正在修改图书: " << b.title << std::endl;
+    std::cout << _("modifying_book") << b.title << std::endl;
 
-    std::cout << "新书名 (留空则不修改 '" << b.title << "'): ";
+    std::cout << _("new_title_prompt") << b.title << "'): ";
     std::string new_val;
     std::getline(std::cin, new_val);
     if (!new_val.empty()) b.title = new_val;
 
-    std::cout << "新作者 (留空则不修改 '" << b.author << "'): ";
+    std::cout << _("new_author_prompt") << b.author << "'): ";
     std::getline(std::cin, new_val);
     if (!new_val.empty()) b.author = new_val;
 
-    std::cout << "新总数 (当前: " << b.totalCopies << "): ";
+    std::cout << _("current_total_prompt") << b.totalCopies << "): ";
     new_val.clear();
     std::getline(std::cin, new_val);
     if (!new_val.empty()) {
@@ -556,55 +596,55 @@ void handleUpdateBook(const DatabaseManager &db) {
             b.totalCopies = new_total;
             b.availableCopies += diff;
         } catch (...) {
-            std::cout << "无效的数字输入，总数未修改。\n";
+            std::cout << _("invalid_choice") << "\n";
         }
     }
 
 
     if (db.updateBook(b)) {
-        std::cout << "图书信息更新成功!\n";
+        std::cout << _("book_update_success") << "\n";
     } else {
-        std::cout << "更新失败。\n";
+        std::cout << _("book_update_failed") << "\n";
     }
     pause();
 }
 
 void handleDeleteBook(const DatabaseManager &db) {
     std::string isbn;
-    std::cout << "输入要删除图书的ISBN: ";
+    std::cout << _("delete_isbn_prompt");
     std::getline(std::cin, isbn);
     if (db.deleteBook(isbn)) {
-        std::cout << "图书删除成功。\n";
+        std::cout << _("book_delete_success") << "\n";
     } else {
-        std::cout << "删除失败。请检查该书是否仍有借阅记录。\n";
+        std::cout << _("book_delete_failed") << "\n";
     }
     pause();
 }
 
 void handleBorrowBook(const DatabaseManager &db, const User &currentUser) {
     std::string isbn;
-    std::cout << "输入要借阅图书的ISBN: ";
+    std::cout << _("isbn_prompt");
     std::getline(std::cin, isbn);
 
-    std::cout << "您希望借阅多少天 (1-90天): ";
+    std::cout << _("borrow_days_prompt");
     int days = getIntInput();
     if (days < 1 || days > 90) {
-        std::cout << "无效的天数。\n";
+        std::cout << _("invalid_days") << "\n";
         pause();
         return;
     }
 
     if (db.borrowBook(currentUser.id, isbn, days)) {
-        std::cout << "借阅成功!\n";
+        std::cout << _("borrow_success") << "\n";
     } else {
-        std::cout << "借阅失败。\n";
+        std::cout << _("borrow_failed") << "\n";
     }
     pause();
 }
 
 void handleReturnBook(const DatabaseManager &db, const User &currentUser) {
     clearScreen();
-    std::cout << "--- 您当前借阅的图书 ---\n";
+    std::cout << "--- " << _("my_current_books") << " ---\n";
     auto records = db.getBorrowedBooksByUser(currentUser.id);
     displayBorrowRecords(records);
     if (records.empty()) {
@@ -612,20 +652,20 @@ void handleReturnBook(const DatabaseManager &db, const User &currentUser) {
         return;
     }
 
-    std::cout << "\n输入要归还图书的记录ID: ";
+    std::cout << "\n" << _("return_record_id_prompt");
     int recordId = getIntInput();
 
     if (db.returnBook(recordId, currentUser.id)) {
-        std::cout << "归还成功!\n";
+        std::cout << _("return_success") << "\n";
     } else {
-        std::cout << "归还失败。\n";
+        std::cout << _("return_failed") << "\n";
     }
     pause();
 }
 
 void handleRenewBook(const DatabaseManager &db, const User &currentUser) {
     clearScreen();
-    std::cout << "--- 您当前借阅的图书 ---\n";
+    std::cout << "--- " << _("my_current_books") << " ---\n";
     auto records = db.getBorrowedBooksByUser(currentUser.id);
     displayBorrowRecords(records);
     if (records.empty()) {
@@ -633,12 +673,12 @@ void handleRenewBook(const DatabaseManager &db, const User &currentUser) {
         return;
     }
 
-    std::cout << "\n输入要续借图书的记录ID: ";
+    std::cout << "\n" << _("return_record_id_prompt");  // Note: same prompt as return book
 
     if (const int recordId = getIntInput(); db.renewBook(recordId, currentUser.id)) {
-        std::cout << "续借成功! 新的应还日期已更新。\n";
+        std::cout << _("renew_success") << "\n";
     } else {
-        std::cout << "续借失败。\n";
+        std::cout << _("renew_failed") << "\n";
     }
     pause();
 }
@@ -654,57 +694,57 @@ void handleMyBorrowedBooks(const DatabaseManager &db, const User &currentUser) {
 void handleAddUser(const DatabaseManager &db) {
     User newUser;
     std::string password;
-    std::cout << "--- 添加新用户 ---\n";
-    std::cout << "输入用户名: ";
+    std::cout << "--- " << _("add_new_user") << " ---\n";
+    std::cout << _("add_username_prompt");
     std::getline(std::cin, newUser.username);
-    std::cout << "输入密码: ";
+    std::cout << _("add_password_prompt");
     std::getline(std::cin, password);
-    std::cout << "输入角色 (ADMIN 或 STUDENT): ";
+    std::cout << _("add_role_prompt");
     std::getline(std::cin, newUser.role);
 
     if (newUser.role == "STUDENT") {
-        std::cout << "输入学号 (ID): ";
+        std::cout << _("student_id_prompt");
         std::getline(std::cin, newUser.id);
-        std::cout << "输入姓名: ";
+        std::cout << _("student_name_prompt");
         std::getline(std::cin, newUser.name);
-        std::cout << "输入学院: ";
+        std::cout << _("college_prompt");
         std::getline(std::cin, newUser.college);
-        std::cout << "输入班级: ";
+        std::cout << _("class_prompt");
         std::getline(std::cin, newUser.className);
     } else if (newUser.role == "ADMIN") {
         newUser.id = newUser.username; // 管理员的ID就是其用户名
     } else {
-        std::cout << "无效的角色。必须是 ADMIN 或 STUDENT。\n";
+        std::cout << _("invalid_role") << "\n";
         pause();
         return;
     }
 
     if (db.addUser(newUser, password)) {
-        std::cout << "用户 '" << newUser.username << "' 添加成功。\n";
+        std::cout << _("user_add_success") << newUser.username << _("user_add_success_part2") << "\n";
     } else {
-        std::cout << "添加失败，用户名或学号可能已存在。\n";
+        std::cout << _("user_add_failed") << "\n";
     }
     pause();
 }
 
 void handleStudentManagement(const DatabaseManager &db) {
     clearScreen();
-    std::cout << "--- 学生借阅查询 ---\n";
+    std::cout << "--- " << _("query_specific_student") << " ---\n";
     std::string keyword;
-    std::cout << "输入学生姓名或学号进行查询: ";
+    std::cout << _("student_query_prompt");
     std::getline(std::cin, keyword);
     auto students = db.findStudents(keyword);
 
     if (students.empty()) {
-        std::cout << "未找到该学生。\n";
+        std::cout << _("student_not_found") << "\n";
     } else if (students.size() == 1) {
         const auto records = db.getFullBorrowRecordsForUser(students[0].id);
-        std::cout << "\n学生 " << students[0].name << " (学号: " << students[0].id << ") 的借阅记录:\n";
+        std::cout << "\n" << _("student_borrow_records") << students[0].name << " (" << _("student_id_label") << students[0].id << ") " << _("borrow_table_header_borrow_date") << ":\n";
         displayFullBorrowRecords(records);
     } else {
-        std::cout << "找到多名学生，请选择一个:\n";
+        std::cout << _("multiple_students_found") << "\n";
         displayStudents(students);
-        std::cout << "请输入要查询的学号 (ID): ";
+        std::cout << _("select_student_id_prompt");
         std::string selectedId;
         std::getline(std::cin, selectedId);
         auto records = db.getFullBorrowRecordsForUser(selectedId);
@@ -719,65 +759,65 @@ void handleRegister(const DatabaseManager &db) {
     std::string password;
     newUser.role = "STUDENT";
 
-    std::cout << "--- 学生注册 ---\n";
-    std::cout << "请输入学号 (将作为您的登录名): ";
+    std::cout << "--- " << _("student_registration") << " ---\n";
+    std::cout << _("student_id_login_prompt");
     std::getline(std::cin, newUser.id);
     newUser.username = newUser.id;
 
     if (db.userExists(newUser.username)) {
-        std::cout << "错误：该学号已被注册。\n";
+        std::cout << _("id_already_exists") << "\n";
         pause();
         return;
     }
 
-    std::cout << "请输入您的真实姓名: ";
+    std::cout << _("real_name_prompt");
     std::getline(std::cin, newUser.name);
-    std::cout << "请输入您的学院: ";
+    std::cout << _("college_prompt");
     std::getline(std::cin, newUser.college);
-    std::cout << "请输入您的班级: ";
+    std::cout << _("class_prompt");
     std::getline(std::cin, newUser.className);
-    std::cout << "请输入密码: ";
+    std::cout << _("add_password_prompt");
     std::getline(std::cin, password);
 
     if (db.addUser(newUser, password)) {
-        std::cout << "注册成功！请使用您的学号登录。\n";
+        std::cout << _("registration_success") << "\n";
     } else {
-        std::cout << "注册失败，请稍后重试。\n";
+        std::cout << _("registration_failed") << "\n";
     }
     pause();
 }
 
 bool handleUpdateMyInfo(const DatabaseManager &db, User &currentUser) {
-    std::cout << "--- 完善/修改个人信息 ---\n";
+    std::cout << "--- " << _("update_personal_info") << " ---\n";
 
-    std::cout << "您的姓名 (当前: " << (currentUser.name.empty() ? "未设置" : currentUser.name) << "): ";
+    std::cout << _("current_name_prompt") << (currentUser.name.empty() ? _("token_not_set") : currentUser.name) << "): ";
     std::string newName;
     std::getline(std::cin, newName);
     if (!newName.empty()) currentUser.name = newName;
 
-    std::cout << "您的学院 (当前: " << (currentUser.college.empty() ? "未设置" : currentUser.college) << "): ";
+    std::cout << _("current_college_prompt") << (currentUser.college.empty() ? _("token_not_set") : currentUser.college) << "): ";
     std::string newCollege;
     std::getline(std::cin, newCollege);
     if (!newCollege.empty()) currentUser.college = newCollege;
 
-    std::cout << "您的班级 (当前: " << (currentUser.className.empty() ? "未设置" : currentUser.className) << "): ";
+    std::cout << _("current_class_prompt") << (currentUser.className.empty() ? _("token_not_set") : currentUser.className) << "): ";
     std::string newClass;
     std::getline(std::cin, newClass);
     if (!newClass.empty()) currentUser.className = newClass;
 
     if (db.updateStudentInfo(currentUser)) {
-        std::cout << "信息更新成功！\n";
+        std::cout << _("info_update_success") << "\n";
         pause();
         return true;
     } else {
-        std::cout << "信息更新失败。\n";
+        std::cout << _("info_update_failed_msg") << "\n";
         pause();
         return false;
     }
 }
 
 void handleListAllBorrowRecords(const DatabaseManager &db) {
-    std::cout << "选择排序方式 (1:按学号, 2:按应还日期): ";
+    std::cout << _("sort_method_prompt");
     int choice = getIntInput();
     std::string sortBy = "studentId";
     if (choice == 2) sortBy = "dueDate";
@@ -789,129 +829,129 @@ void handleListAllBorrowRecords(const DatabaseManager &db) {
 
 void handleForgotPassword(const DatabaseManager &db) {
     clearScreen();
-    std::cout << "--- 找回密码 ---\n";
+    std::cout << "--- " << _("forgot_password_option") << " ---\n";
     std::string username, token, newPassword, confirmPassword;
-    std::cout << "请输入您的学号: ";
+    std::cout << _("student_id_login_prompt");
     std::getline(std::cin, username);
-    std::cout << "请输入您设置的安全口令: ";
+    std::cout << _("recovery_token_prompt");
     std::getline(std::cin, token);
-    std::cout << "请输入新密码: ";
+    std::cout << _("new_password_prompt");
     std::getline(std::cin, newPassword);
-    std::cout << "请再次输入新密码: ";
+    std::cout << _("confirm_password_prompt");
     std::getline(std::cin, confirmPassword);
 
     if (newPassword != confirmPassword) {
-        std::cout << "两次输入的密码不一致。\n";
+        std::cout << _("password_mismatch") << "\n";
         pause();
         return;
     }
 
     if (db.recoverPassword(username, token, newPassword)) {
-        std::cout << "密码重置成功！\n";
+        std::cout << _("password_reset_success") << "\n";
     } else {
-        std::cout << "密码重置失败。请检查您的学号和安全口令是否正确。\n";
+        std::cout << _("password_reset_failed") << "\n";
     }
     pause();
 }
 
 void handleAdminChangePassword(const DatabaseManager &db) {
     clearScreen();
-    std::cout << "--- 修改学生密码 ---\n";
+    std::cout << "--- " << _("student_change_password") << " ---\n";
     std::string username, newPassword, confirmPassword;
-    std::cout << "请输入要修改密码的学生的学号: ";
+    std::cout << _("target_student_id_prompt");
     std::getline(std::cin, username);
 
     if (!db.userExists(username)) {
-        std::cout << "错误：该学号不存在。\n";
+        std::cout << _("student_id_not_exist") << "\n";
         pause();
         return;
     }
 
-    std::cout << "请输入新密码: ";
+    std::cout << _("new_password_prompt");
     std::getline(std::cin, newPassword);
-    std::cout << "请再次输入新密码: ";
+    std::cout << _("confirm_password_prompt");
     std::getline(std::cin, confirmPassword);
 
     if (newPassword != confirmPassword) {
-        std::cout << "两次输入的密码不一致。\n";
+        std::cout << _("password_mismatch") << "\n";
         pause();
         return;
     }
 
     if (db.updatePassword(username, newPassword)) {
-        std::cout << "密码修改成功！\n";
+        std::cout << _("password_change_success") << "\n";
     } else {
-        std::cout << "密码修改失败。\n";
+        std::cout << _("password_change_failed") << "\n";
     }
     pause();
 }
 
 void handleStudentChangePassword(const DatabaseManager &db, const User &currentUser) {
     clearScreen();
-    std::cout << "--- 修改我的密码 ---\n";
+    std::cout << "--- " << _("student_password_change") << " ---\n";
     std::string oldPassword, newPassword, confirmPassword;
-    std::cout << "请输入当前密码进行验证: ";
+    std::cout << _("current_password_prompt");
     std::getline(std::cin, oldPassword);
 
     // 验证旧密码是否正确
     if (db.authenticateUser(currentUser.username, oldPassword).role.empty()) {
-        std::cout << "当前密码错误！\n";
+        std::cout << _("current_password_wrong") << "\n";
         pause();
         return;
     }
 
-    std::cout << "请输入新密码: ";
+    std::cout << _("new_password_prompt");
     std::getline(std::cin, newPassword);
-    std::cout << "请再次输入新密码: ";
+    std::cout << _("confirm_password_prompt");
     std::getline(std::cin, confirmPassword);
 
     if (newPassword != confirmPassword) {
-        std::cout << "两次输入的密码不一致。\n";
+        std::cout << _("password_mismatch") << "\n";
         pause();
         return;
     }
 
     if (db.updatePassword(currentUser.username, newPassword)) {
-        std::cout << "密码修改成功！\n";
+        std::cout << _("password_change_success") << "\n";
     } else {
-        std::cout << "密码修改失败。\n";
+        std::cout << _("password_change_failed") << "\n";
     }
     pause();
 }
 
 void handleSetRecoveryToken(const DatabaseManager &db, User &currentUser) {
     clearScreen();
-    std::cout << "--- 设置/更新找回密码口令 ---\n";
+    std::cout << "--- " << _("set_recovery_token") << " ---\n";
     if (currentUser.hasRecoveryToken) {
-        std::cout << "您已设置过安全口令。更新操作将覆盖旧口令。\n";
+        std::cout << _("token_already_set") << "\n";
     }
-    std::cout << "请输入新的安全口令 (请牢记): ";
+    std::cout << _("enter_new_token");
     std::string token;
     std::getline(std::cin, token);
 
     if (token.empty()) {
-        std::cout << "安全口令不能为空。\n";
+        std::cout << _("token_empty_error") << "\n";
         pause();
         return;
     }
 
     if (db.updateRecoveryToken(currentUser.username, token)) {
-        std::cout << "安全口令设置成功！\n";
+        std::cout << _("token_set_success") << "\n";
         currentUser.hasRecoveryToken = true;
     } else {
-        std::cout << "安全口令设置失败。\n";
+        std::cout << _("token_set_failed") << "\n";
     }
     pause();
 }
 
 void handleViewMyInfo(const User &currentUser) {
     clearScreen();
-    std::cout << "--- 我的个人信息 ---\n";
-    std::cout << "学号:    " << currentUser.id << std::endl;
-    std::cout << "姓名:    " << currentUser.name << std::endl;
-    std::cout << "学院:    " << currentUser.college << std::endl;
-    std::cout << "班级:    " << currentUser.className << std::endl;
-    std::cout << "角色:    " << currentUser.role << std::endl;
-    std::cout << "安全口令: " << (currentUser.hasRecoveryToken ? "已设置" : "未设置") << std::endl;
+    std::cout << "--- " << _("my_personal_info") << " ---\n";
+    std::cout << _("student_id_label") << "    " << currentUser.id << std::endl;
+    std::cout << _("name_label") << "    " << currentUser.name << std::endl;
+    std::cout << _("college_label") << "    " << currentUser.college << std::endl;
+    std::cout << _("class_label") << "    " << currentUser.className << std::endl;
+    std::cout << _("role_label") << "    " << currentUser.role << std::endl;
+    std::cout << _("recovery_token_status") << " " << (currentUser.hasRecoveryToken ? _("token_set") : _("token_not_set")) << std::endl;
     pause();
 }
