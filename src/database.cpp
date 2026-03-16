@@ -26,6 +26,8 @@
 #include <chrono>
 #include <sstream>
 #include <iomanip>
+#include <random>
+#include <algorithm>
 
 DatabaseManager::DatabaseManager(std::string db_path) : db_path_(std::move(db_path)) {
     // to do noting
@@ -35,6 +37,25 @@ DatabaseManager::~DatabaseManager() {
     if (db_) {
         sqlite3_close(db_);
     }
+}
+
+std::string DatabaseManager::generateSalt() {
+    std::random_device rd;
+    std::mt19937_64 gen(rd());
+    std::uniform_int_distribution<uint64_t> dis;
+    std::ostringstream oss;
+    oss << std::hex << std::setfill('0');
+    for (int i = 0; i < 4; ++i) {
+        oss << std::setw(16) << dis(gen);
+    }
+    return oss.str(); // 64-character hex salt
+}
+
+std::string DatabaseManager::hashPassword(const std::string &password, const std::string &salt) {
+    if (salt.empty()) {
+        return SHA256::hash(password); // Legacy: no salt (backward compat)
+    }
+    return SHA256::hash(salt + ":" + password);
 }
 
 bool DatabaseManager::initialize() {
@@ -48,11 +69,13 @@ bool DatabaseManager::initialize() {
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
+            password_salt TEXT NOT NULL DEFAULT '',
             name TEXT,
             college TEXT,
             className TEXT,
             role TEXT NOT NULL CHECK(role IN ('ADMIN', 'STUDENT')),
-            recovery_token_hash TEXT
+            recovery_token_hash TEXT,
+            password_needs_change INTEGER NOT NULL DEFAULT 0
         );
     )";
 
@@ -81,6 +104,16 @@ bool DatabaseManager::initialize() {
         );
     )";
 
+    const auto create_audit_table = R"(
+        CREATE TABLE IF NOT EXISTS AuditLog (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            userId TEXT NOT NULL,
+            action TEXT NOT NULL,
+            detail TEXT
+        );
+    )";
+
     // Define indexes to improve query performance
     const auto create_users_username_index = R"(CREATE INDEX IF NOT EXISTS idx_users_username ON Users(username);)";
     const auto create_books_title_index = R"(CREATE INDEX IF NOT EXISTS idx_books_title ON Books(title);)";
@@ -90,15 +123,21 @@ bool DatabaseManager::initialize() {
     const auto create_records_book_index = R"(CREATE INDEX IF NOT EXISTS idx_borrowing_records_book ON BorrowingRecords(bookIsbn);)";
     const auto create_users_name_index = R"(CREATE INDEX IF NOT EXISTS idx_users_name ON Users(name);)";
     const auto create_users_college_index = R"(CREATE INDEX IF NOT EXISTS idx_users_college ON Users(college);)";
+    const auto create_audit_time_index = R"(CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON AuditLog(timestamp);)";
 
     char *err_msg = nullptr;
     if (sqlite3_exec(db_, create_users_table, nullptr, nullptr, &err_msg) != SQLITE_OK ||
         sqlite3_exec(db_, create_books_table, nullptr, nullptr, &err_msg) != SQLITE_OK ||
-        sqlite3_exec(db_, create_records_table, nullptr, nullptr, &err_msg) != SQLITE_OK) {
+        sqlite3_exec(db_, create_records_table, nullptr, nullptr, &err_msg) != SQLITE_OK ||
+        sqlite3_exec(db_, create_audit_table, nullptr, nullptr, &err_msg) != SQLITE_OK) {
         std::cerr << "SQL error creating tables: " << err_msg << std::endl;
         sqlite3_free(err_msg);
         return false;
     }
+
+    // Schema migrations: add new columns to Users if they don't exist yet (for existing databases)
+    sqlite3_exec(db_, "ALTER TABLE Users ADD COLUMN password_salt TEXT NOT NULL DEFAULT '';", nullptr, nullptr, nullptr);
+    sqlite3_exec(db_, "ALTER TABLE Users ADD COLUMN password_needs_change INTEGER NOT NULL DEFAULT 0;", nullptr, nullptr, nullptr);
 
     // Create indexes
     if (sqlite3_exec(db_, create_users_username_index, nullptr, nullptr, &err_msg) != SQLITE_OK ||
@@ -108,7 +147,8 @@ bool DatabaseManager::initialize() {
         sqlite3_exec(db_, create_records_user_index, nullptr, nullptr, &err_msg) != SQLITE_OK ||
         sqlite3_exec(db_, create_records_book_index, nullptr, nullptr, &err_msg) != SQLITE_OK ||
         sqlite3_exec(db_, create_users_name_index, nullptr, nullptr, &err_msg) != SQLITE_OK ||
-        sqlite3_exec(db_, create_users_college_index, nullptr, nullptr, &err_msg) != SQLITE_OK) {
+        sqlite3_exec(db_, create_users_college_index, nullptr, nullptr, &err_msg) != SQLITE_OK ||
+        sqlite3_exec(db_, create_audit_time_index, nullptr, nullptr, &err_msg) != SQLITE_OK) {
         std::cerr << "SQL error creating indexes: " << err_msg << std::endl;
         sqlite3_free(err_msg);
         return false;
@@ -117,9 +157,9 @@ bool DatabaseManager::initialize() {
     return true;
 }
 
-bool DatabaseManager::addUser(const User &user, const std::string &password) const {
+bool DatabaseManager::addUser(const User &user, const std::string &password, bool needsPasswordChange) const {
     const std::string sql =
-            "INSERT INTO Users (id, username, password_hash, name, college, className, role, recovery_token_hash) VALUES (?, ?, ?, ?, ?, ?, ?, NULL);";
+            "INSERT INTO Users (id, username, password_hash, password_salt, name, college, className, role, recovery_token_hash, password_needs_change) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?);";
     sqlite3_stmt *stmt;
     if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
         std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db_) << std::endl;
@@ -135,14 +175,17 @@ bool DatabaseManager::addUser(const User &user, const std::string &password) con
         operator sqlite3_stmt*() { return stmt; }
     } stmt_wrapper(stmt);
 
-    const std::string hashedPassword = SHA256::hash(password);
+    const std::string salt = generateSalt();
+    const std::string hashedPassword = hashPassword(password, salt);
     sqlite3_bind_text(stmt, 1, user.id.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 2, user.username.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 3, hashedPassword.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 4, user.name.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 5, user.college.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 6, user.className.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 7, user.role.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 4, salt.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 5, user.name.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 6, user.college.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 7, user.className.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 8, user.role.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 9, needsPasswordChange ? 1 : 0);
 
     bool success = (sqlite3_step(stmt) == SQLITE_DONE);
     if (!success) {
@@ -179,11 +222,13 @@ bool DatabaseManager::userExists(const std::string &username) const {
 User DatabaseManager::authenticateUser(const std::string &username, const std::string &password) const {
     User user;
     user.role = ""; // 默认角色为空，表示认证失败
-    const std::string sql =
-            "SELECT id, name, college, className, role, recovery_token_hash FROM Users WHERE username = ? AND password_hash = ?;";
+
+    // First, fetch salt and stored hash for the user
+    const std::string salt_sql =
+            "SELECT id, name, college, className, role, recovery_token_hash, password_hash, password_salt, password_needs_change FROM Users WHERE username = ?;";
     sqlite3_stmt *stmt;
 
-    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(db_, salt_sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
         std::cerr << "Failed to prepare statement in authenticateUser: " << sqlite3_errmsg(db_) << std::endl;
         return user;
     }
@@ -197,21 +242,27 @@ User DatabaseManager::authenticateUser(const std::string &username, const std::s
         operator sqlite3_stmt*() { return stmt; }
     } stmt_wrapper(stmt);
 
-    const std::string hashedPassword = SHA256::hash(password);
     sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, hashedPassword.c_str(), -1, SQLITE_STATIC);
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
-        user.id = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
-        user.username = username;
-        const char *name_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
-        user.name = name_text ? name_text : "";
-        const char *college_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2));
-        user.college = college_text ? college_text : "";
-        const char *class_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3));
-        user.className = class_text ? class_text : "";
-        user.role = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4));
-        user.hasRecoveryToken = (sqlite3_column_type(stmt, 5) != SQLITE_NULL);
+        const char *stored_hash = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 6));
+        const char *salt_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 7));
+        const std::string salt = salt_text ? salt_text : "";
+        const std::string computedHash = hashPassword(password, salt);
+
+        if (stored_hash && computedHash == std::string(stored_hash)) {
+            user.id = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
+            user.username = username;
+            const char *name_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
+            user.name = name_text ? name_text : "";
+            const char *college_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2));
+            user.college = college_text ? college_text : "";
+            const char *class_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3));
+            user.className = class_text ? class_text : "";
+            user.role = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4));
+            user.hasRecoveryToken = (sqlite3_column_type(stmt, 5) != SQLITE_NULL);
+            user.passwordNeedsChange = (sqlite3_column_int(stmt, 8) == 1);
+        }
     }
 
     // stmt will be automatically finalized by the wrapper
@@ -234,13 +285,15 @@ bool DatabaseManager::updateStudentInfo(const User &user) const {
 }
 
 bool DatabaseManager::updatePassword(const std::string &username, const std::string &newPassword) const {
-    const std::string sql = "UPDATE Users SET password_hash = ? WHERE username = ?;";
+    const std::string sql = "UPDATE Users SET password_hash = ?, password_salt = ?, password_needs_change = 0 WHERE username = ?;";
     sqlite3_stmt *stmt;
     if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return false;
 
-    const std::string hashedPassword = SHA256::hash(newPassword);
+    const std::string salt = generateSalt();
+    const std::string hashedPassword = hashPassword(newPassword, salt);
     sqlite3_bind_text(stmt, 1, hashedPassword.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, username.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, salt.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, username.c_str(), -1, SQLITE_STATIC);
 
     const bool success = (sqlite3_step(stmt) == SQLITE_DONE);
     sqlite3_finalize(stmt);
@@ -263,16 +316,18 @@ bool DatabaseManager::updateRecoveryToken(const std::string &username, const std
 
 bool DatabaseManager::recoverPassword(const std::string &username, const std::string &token,
                                       const std::string &newPassword) const {
-    const std::string sql = "UPDATE Users SET password_hash = ? WHERE username = ? AND recovery_token_hash = ?;";
+    const std::string sql = "UPDATE Users SET password_hash = ?, password_salt = ? WHERE username = ? AND recovery_token_hash = ?;";
     sqlite3_stmt *stmt;
     if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return false;
 
-    const std::string newHashedPassword = SHA256::hash(newPassword);
+    const std::string newSalt = generateSalt();
+    const std::string newHashedPassword = hashPassword(newPassword, newSalt);
     const std::string hashedToken = SHA256::hash(token);
 
     sqlite3_bind_text(stmt, 1, newHashedPassword.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, username.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 3, hashedToken.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, newSalt.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, username.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 4, hashedToken.c_str(), -1, SQLITE_STATIC);
 
     const bool success = (sqlite3_step(stmt) == SQLITE_DONE);
 
@@ -443,6 +498,39 @@ std::vector<Book> DatabaseManager::getAllBooksWithPagination(const std::string &
 
 bool DatabaseManager::borrowBook(const std::string &userId, const std::string &isbn, int daysToBorrow) const {
     sqlite3_exec(db_, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
+
+    // Check for duplicate active borrow (same user, same book, not returned)
+    sqlite3_stmt *dup_stmt;
+    const std::string dup_sql = "SELECT COUNT(*) FROM BorrowingRecords WHERE userId = ? AND bookIsbn = ? AND returnDate IS NULL;";
+    if (sqlite3_prepare_v2(db_, dup_sql.c_str(), -1, &dup_stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_text(dup_stmt, 1, userId.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_text(dup_stmt, 2, isbn.c_str(), -1, SQLITE_STATIC);
+        if (sqlite3_step(dup_stmt) == SQLITE_ROW && sqlite3_column_int(dup_stmt, 0) > 0) {
+            sqlite3_finalize(dup_stmt);
+            sqlite3_exec(db_, "ROLLBACK;", nullptr, nullptr, nullptr);
+            return false; // caller will show appropriate message
+        }
+        sqlite3_finalize(dup_stmt);
+    } else {
+        sqlite3_exec(db_, "ROLLBACK;", nullptr, nullptr, nullptr);
+        return false;
+    }
+
+    // Enforce maximum borrow limit per user
+    sqlite3_stmt *limit_stmt;
+    const std::string limit_sql = "SELECT COUNT(*) FROM BorrowingRecords WHERE userId = ? AND returnDate IS NULL;";
+    if (sqlite3_prepare_v2(db_, limit_sql.c_str(), -1, &limit_stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_text(limit_stmt, 1, userId.c_str(), -1, SQLITE_STATIC);
+        if (sqlite3_step(limit_stmt) == SQLITE_ROW && sqlite3_column_int(limit_stmt, 0) >= MAX_BORROW_LIMIT) {
+            sqlite3_finalize(limit_stmt);
+            sqlite3_exec(db_, "ROLLBACK;", nullptr, nullptr, nullptr);
+            return false; // caller will show appropriate message
+        }
+        sqlite3_finalize(limit_stmt);
+    } else {
+        sqlite3_exec(db_, "ROLLBACK;", nullptr, nullptr, nullptr);
+        return false;
+    }
 
     std::string check_sql = "SELECT availableCopies FROM Books WHERE isbn = ?;";
     sqlite3_stmt *check_stmt;
@@ -862,4 +950,126 @@ std::vector<FullBorrowRecord> DatabaseManager::getAllFullBorrowRecords(const std
     }
     sqlite3_finalize(stmt);
     return records;
+}
+
+bool DatabaseManager::isBookAlreadyBorrowedByUser(const std::string &userId, const std::string &isbn) const {
+    const std::string sql = "SELECT COUNT(*) FROM BorrowingRecords WHERE userId = ? AND bookIsbn = ? AND returnDate IS NULL;";
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return false;
+    sqlite3_bind_text(stmt, 1, userId.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, isbn.c_str(), -1, SQLITE_STATIC);
+    bool result = false;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        result = sqlite3_column_int(stmt, 0) > 0;
+    }
+    sqlite3_finalize(stmt);
+    return result;
+}
+
+int DatabaseManager::getActiveBorrowCount(const std::string &userId) const {
+    const std::string sql = "SELECT COUNT(*) FROM BorrowingRecords WHERE userId = ? AND returnDate IS NULL;";
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return 0;
+    sqlite3_bind_text(stmt, 1, userId.c_str(), -1, SQLITE_STATIC);
+    int count = 0;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        count = sqlite3_column_int(stmt, 0);
+    }
+    sqlite3_finalize(stmt);
+    return count;
+}
+
+bool DatabaseManager::logAction(const std::string &userId, const std::string &action, const std::string &detail) const {
+    const std::string sql = "INSERT INTO AuditLog (timestamp, userId, action, detail) VALUES (datetime('now'), ?, ?, ?);"; // UTC timestamp for consistency
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return false;
+
+    sqlite3_bind_text(stmt, 1, userId.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, action.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, detail.c_str(), -1, SQLITE_STATIC);
+
+    const bool success = (sqlite3_step(stmt) == SQLITE_DONE);
+    sqlite3_finalize(stmt);
+    return success;
+}
+
+std::vector<AuditRecord> DatabaseManager::getRecentAuditLogs(int limit) const {
+    std::vector<AuditRecord> records;
+    const std::string sql = "SELECT id, timestamp, userId, action, detail FROM AuditLog ORDER BY id DESC LIMIT ?;";
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return records;
+
+    sqlite3_bind_int(stmt, 1, limit);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        AuditRecord rec;
+        rec.id = sqlite3_column_int(stmt, 0);
+        const char *ts = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
+        rec.timestamp = ts ? ts : "";
+        const char *uid = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2));
+        rec.userId = uid ? uid : "";
+        const char *act = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3));
+        rec.action = act ? act : "";
+        const char *det = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4));
+        rec.detail = det ? det : "";
+        records.push_back(rec);
+    }
+    sqlite3_finalize(stmt);
+    return records;
+}
+
+SystemStats DatabaseManager::getSystemStats() const {
+    SystemStats stats;
+    sqlite3_stmt *stmt;
+
+    // Total book titles and copy counts
+    if (sqlite3_prepare_v2(db_, "SELECT COUNT(*), COALESCE(SUM(totalCopies),0), COALESCE(SUM(availableCopies),0) FROM Books;", -1, &stmt, nullptr) == SQLITE_OK) {
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            stats.totalBookTitles = sqlite3_column_int(stmt, 0);
+            stats.totalCopies = sqlite3_column_int(stmt, 1);
+            stats.availableCopies = sqlite3_column_int(stmt, 2);
+        }
+        sqlite3_finalize(stmt);
+    }
+
+    // Total students
+    if (sqlite3_prepare_v2(db_, "SELECT COUNT(*) FROM Users WHERE role = 'STUDENT';", -1, &stmt, nullptr) == SQLITE_OK) {
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            stats.totalStudents = sqlite3_column_int(stmt, 0);
+        }
+        sqlite3_finalize(stmt);
+    }
+
+    // Active (unreturned) borrowings
+    if (sqlite3_prepare_v2(db_, "SELECT COUNT(*) FROM BorrowingRecords WHERE returnDate IS NULL;", -1, &stmt, nullptr) == SQLITE_OK) {
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            stats.activeBorrowings = sqlite3_column_int(stmt, 0);
+        }
+        sqlite3_finalize(stmt);
+    }
+
+    // Overdue borrowings
+    if (sqlite3_prepare_v2(db_, "SELECT COUNT(*) FROM BorrowingRecords WHERE returnDate IS NULL AND dueDate < date('now');", -1, &stmt, nullptr) == SQLITE_OK) {
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            stats.overdueCount = sqlite3_column_int(stmt, 0);
+        }
+        sqlite3_finalize(stmt);
+    }
+
+    // Most borrowed book
+    const auto top_sql = R"(
+        SELECT b.title, COUNT(*) as cnt
+        FROM BorrowingRecords r JOIN Books b ON r.bookIsbn = b.isbn
+        GROUP BY r.bookIsbn ORDER BY cnt DESC LIMIT 1;
+    )";
+    if (sqlite3_prepare_v2(db_, top_sql, -1, &stmt, nullptr) == SQLITE_OK) {
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            const char *title = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
+            stats.topBorrowedBookTitle = title ? title : "";
+            stats.topBorrowedBookCount = sqlite3_column_int(stmt, 1);
+        }
+        sqlite3_finalize(stmt);
+    }
+
+    return stats;
 }
