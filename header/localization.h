@@ -250,7 +250,24 @@ private:
         englishTexts["full_borrow_table_header_overdue"] = "Overdue";
         englishTexts["yes"] = "Yes";
         englishTexts["no"] = "No";
-        
+
+        // Log management
+        englishTexts["log_management"] = "Log Management";
+        englishTexts["query_logs_by_time"] = "Query Logs by Time";
+        englishTexts["query_logs_by_user"] = "Query Logs by User";
+        englishTexts["query_logs_by_level"] = "Query Logs by Level";
+        englishTexts["query_logs_by_action"] = "Query Logs by Action";
+        englishTexts["view_all_logs"] = "View All Logs";
+        englishTexts["start_time_prompt"] = "Start Time";
+        englishTexts["end_time_prompt"] = "End Time";
+        englishTexts["action_prompt"] = "Action";
+        englishTexts["time"] = "Time";
+        englishTexts["level"] = "Level";
+        englishTexts["action"] = "Action";
+        englishTexts["message"] = "Message";
+        englishTexts["no_logs_found"] = "No logs found";
+        englishTexts["total_logs"] = "Total logs";
+
         // Chinese texts
         chineseTexts["welcome_main_menu"] = "欢迎使用图书管理系统";
         chineseTexts["login_option"] = "1. 登录";
@@ -446,6 +463,23 @@ private:
         chineseTexts["no_more_books"] = "没有更多图书可显示。";
         chineseTexts["show_next_page_or_exit"] = "按回车键查看下一页，或输入 'q' 退出: ";
         chineseTexts["end_of_list"] = "已到达列表末尾。";
+
+        // Log management
+        chineseTexts["log_management"] = "日志管理";
+        chineseTexts["query_logs_by_time"] = "按时间查询日志";
+        chineseTexts["query_logs_by_user"] = "按用户查询日志";
+        chineseTexts["query_logs_by_level"] = "按级别查询日志";
+        chineseTexts["query_logs_by_action"] = "按操作查询日志";
+        chineseTexts["view_all_logs"] = "查看所有日志";
+        chineseTexts["start_time_prompt"] = "开始时间";
+        chineseTexts["end_time_prompt"] = "结束时间";
+        chineseTexts["action_prompt"] = "操作";
+        chineseTexts["time"] = "时间";
+        chineseTexts["level"] = "级别";
+        chineseTexts["action"] = "操作";
+        chineseTexts["message"] = "消息";
+        chineseTexts["no_logs_found"] = "未找到日志";
+        chineseTexts["total_logs"] = "总日志数";
     }
 
     Language currentLanguage = Language::CHINESE;

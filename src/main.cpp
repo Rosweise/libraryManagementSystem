@@ -27,6 +27,7 @@
 #include "../header/database.h"
 #include "../header/utils.h"
 #include "../header/localization.h"
+#include "../header/logger.h"
 
 
 void handleAddBook(const DatabaseManager &db);  // 添加图书
@@ -53,6 +54,12 @@ void handleStudentChangePassword(const DatabaseManager &db, const User &currentU
 void handleSetRecoveryToken(const DatabaseManager &db, User &currentUser);  // 安全口令
 void handleViewMyInfo(const User &currentUser);  // 查看自己的信息
 
+// Log management functions
+void handleQueryLogsByTime(const DatabaseManager &db);
+void handleQueryLogsByUser(const DatabaseManager &db);
+void handleQueryLogsByLevel(const DatabaseManager &db);
+void handleQueryLogsByAction(const DatabaseManager &db);
+void handleViewAllLogs(const DatabaseManager &db);
 
 void displayBooks(const std::vector<Book> &books);  //  显示图书信息
 void displayBorrowRecords(const std::vector<BorrowRecord> &records);  // 显示借阅记录
@@ -87,6 +94,7 @@ void showAdminMenu(const DatabaseManager &db, const User &currentUser) {
         std::cout << _("book_management") << "\n";
         std::cout << _("user_management") << "\n";
         std::cout << _("borrow_management") << "\n";
+        std::cout << "4. " << _("log_management") << "\n";
         std::cout << _("logout") << "\n";
         std::cout << "---------------------------------\n";
         std::cout << _("enter_choice");
@@ -151,6 +159,35 @@ void showAdminMenu(const DatabaseManager &db, const User &currentUser) {
                         default: ;
                     }
                 } while (recordChoice != 0);
+                break;
+            }
+            case 4: {
+                int logChoice;
+                do {
+                    clearScreen();
+                    std::cout << "--- " << _("log_management") << " ---\n";
+                    std::cout << "1. " << _("query_logs_by_time") << "\n";
+                    std::cout << "2. " << _("query_logs_by_user") << "\n";
+                    std::cout << "3. " << _("query_logs_by_level") << "\n";
+                    std::cout << "4. " << _("query_logs_by_action") << "\n";
+                    std::cout << "5. " << _("view_all_logs") << "\n";
+                    std::cout << _("return_to_main") << "\n";
+                    std::cout << _("enter_choice");
+                    logChoice = getIntInput();
+                    switch (logChoice) {
+                        case 1: handleQueryLogsByTime(db);
+                            break;
+                        case 2: handleQueryLogsByUser(db);
+                            break;
+                        case 3: handleQueryLogsByLevel(db);
+                            break;
+                        case 4: handleQueryLogsByAction(db);
+                            break;
+                        case 5: handleViewAllLogs(db);
+                            break;
+                        default: ;
+                    }
+                } while (logChoice != 0);
                 break;
             }
             case 0: std::cout << _("logging_out") << "\n";
@@ -252,10 +289,13 @@ void login(const DatabaseManager &db) {
     User user = db.authenticateUser(username, password);
 
     if (user.role == "ADMIN") {
+        Logger::getInstance().info("Admin user logged in successfully", username, "login");
         showAdminMenu(db, user);
     } else if (user.role == "STUDENT") {
+        Logger::getInstance().info("Student user logged in successfully", username, "login");
         showStudentMenu(db, user);
     } else {
+        Logger::getInstance().warn("Failed login attempt", username, "login");
         std::cout << _("login_failed") << "\n";
         pause();
     }
@@ -265,11 +305,17 @@ void login(const DatabaseManager &db) {
 int main() {
     // Initialize localization and load config
     Localization::getInstance().loadConfig();
-    
+
+    // Initialize logger
+    Logger::getInstance().initialize("library.db");
+    Logger::getInstance().info("Application started", "system", "startup");
+
     DatabaseManager db("library.db");
     if (!db.initialize()) {
+        Logger::getInstance().error("Failed to initialize database", "system", "startup");
         return 1;
     }
+    Logger::getInstance().info("Database initialized successfully", "system", "startup");
 
     if (!db.userExists("admin")) {
         std::cout << _("first_run_setup") << "\n";
@@ -534,8 +580,10 @@ void handleAddBook(const DatabaseManager &db) {
     b.availableCopies = b.totalCopies;
 
     if (db.addBook(b)) {
+        Logger::getInstance().info("Book added: " + b.title + " (ISBN: " + b.isbn + ")", "admin", "add_book");
         std::cout << _("book_added_success") << "\n";
     } else {
+        Logger::getInstance().error("Failed to add book: " + b.title + " (ISBN: " + b.isbn + ")", "admin", "add_book");
         std::cout << _("book_add_failed") << "\n";
     }
     pause();
@@ -699,8 +747,10 @@ void handleBorrowBook(const DatabaseManager &db, const User &currentUser) {
     }
 
     if (db.borrowBook(currentUser.id, isbn, days)) {
+        Logger::getInstance().info("Book borrowed (ISBN: " + isbn + ") for " + std::to_string(days) + " days", currentUser.username, "borrow_book");
         std::cout << _("borrow_success") << "\n";
     } else {
+        Logger::getInstance().warn("Failed to borrow book (ISBN: " + isbn + ")", currentUser.username, "borrow_book");
         std::cout << _("borrow_failed") << "\n";
     }
     pause();
@@ -720,8 +770,10 @@ void handleReturnBook(const DatabaseManager &db, const User &currentUser) {
     int recordId = getIntInput();
 
     if (db.returnBook(recordId, currentUser.id)) {
+        Logger::getInstance().info("Book returned (Record ID: " + std::to_string(recordId) + ")", currentUser.username, "return_book");
         std::cout << _("return_success") << "\n";
     } else {
+        Logger::getInstance().warn("Failed to return book (Record ID: " + std::to_string(recordId) + ")", currentUser.username, "return_book");
         std::cout << _("return_failed") << "\n";
     }
     pause();

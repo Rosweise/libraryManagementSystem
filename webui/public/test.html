@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        .status { color: #22c55e; font-weight: bold; }
+        .info { margin: 20px 0; line-height: 1.8; }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        button:hover { background: #4f46e5; }
+        .error { color: #ef4444; }
+        #result { margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🎉 系统测试页面</h1>
+        <p class="status">✅ HTML 加载成功</p>
+
+        <div class="info">
+            <p><strong>前端服务器:</strong> http://localhost:3000</p>
+            <p><strong>API服务器:</strong> http://localhost:8080</p>
+        </div>
+
+        <button onclick="testAPI()">测试 API 连接</button>
+        <button onclick="testVue()">测试 Vue 应用</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('result');
+            result.innerHTML = '正在测试 API...';
+
+            try {
+                const response = await fetch('http://localhost:8080/api/health');
+                const data = await response.json();
+                result.innerHTML = `<p class="status">✅ API 连接成功!</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                result.innerHTML = `<p class="error">❌ API 连接失败: ${error.message}</p>`;
+            }
+        }
+
+        function testVue() {
+            window.location.href = '/';
+        }
+
+        console.log('测试页面加载成功');
+        console.log('如果你能看到这条消息，说明JavaScript正常工作');
+    </script>
+</body>
+</html>
