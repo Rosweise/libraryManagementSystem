@@ -28,7 +28,7 @@
 
 ## Overview
 
-**libraryManagementSystem** is a terminal-based library management system built with SQLite database. Developed using C++20 standard and CMake build system, it supports Windows, Linux, and macOS operating systems.
+**libraryManagementSystem** is a local, terminal-based library management system built on an SQLite database, which also offers visual management capabilities via a web interface. The system is developed using the C++20 standard, built with CMake, and supports the three major operating systems: Windows, Linux, and macOS.
 
 The system implements role-based access control with two user types:
 
@@ -50,6 +50,12 @@ The system implements role-based access control with two user types:
 | Overdue Alerts | Automatic detection and notification of overdue books |
 | Adaptive UI | Tables automatically adjust to terminal width |
 | Multi-Language Support | Switch between English and Chinese interface languages |
+| **Web Interface** | A Modern Vue 3 WebUI |
+| **RESTful API** | Node.js Express API server for web integration |
+| **Logging System** | Comprehensive logging with query capabilities |
+| **Enhanced Admin Panel** | Full book, user, and borrowing management capabilities |
+| **User Management** | Complete user registration, authentication, and profile management |
+| **Responsive Design** | Optimized for desktop and mobile devices |
 
 ---
 
@@ -352,20 +358,38 @@ libraryManagementSystem/
 │   └── Windows-x86.cmake   # Windows cross-compilation toolchain
 ├── header/
 │   ├── database.h          # Database manager class declaration
+│   ├── logger.h            # Logger class for system logging
 │   ├── sha256.h            # SHA-256 encryption header
 │   ├── utils.h             # Utility functions (clear screen, terminal width, etc.)
 │   └── localization.h      # Localization and language switching functionality
 ├── src/
 │   ├── main.cpp            # Program entry point and UI logic
 │   ├── database.cpp        # Database operations implementation
+│   ├── logger.cpp          # Logger implementation
+│   ├── logging_functions.cpp # Log query functions
 │   └── sha256.cpp          # SHA-256 encryption implementation
 ├── lib/
 │   ├── sqlite3.c           # SQLite source code
 │   └── sqlite3.h           # SQLite header file
-├── Build/                  # Build output directory
+├── api-server/             # Node.js Express API server
+│   ├── server.js           # API server implementation
+│   ├── package.json        # Node.js dependencies
+│   └── README.md           # API server documentation
+├── webui/                  # Vue 3 WebUI (updated to white theme)
+│   ├── src/
+│   │   ├── api/            # API service layer
+│   │   ├── views/          # Vue components and pages
+│   │   ├── router/         # Vue Router configuration
+│   │   ├── store/          # Pinia state management
+│   │   └── plugins/        # Vue plugins (i18n, etc.)
+│   ├── package.json        # Frontend dependencies
+│   └── vite.config.ts      # Vite configuration
+├── build/                  # Build output directory
 └── docs/
-    └── README_zh-CN.md     # Chinese documentation
-    └── CMake 安装教程.md    # CMake installation guide (Chinese)
+    ├── README_zh-CN.md     # Chinese documentation
+    ├── CMake 安装教程.md    # CMake installation guide (Chinese)
+    ├── API_SERVER_GUIDE.md # API server implementation guide
+    └── DEPLOYMENT_GUIDE.md # Complete deployment guide
 ```
 
 ---
@@ -379,6 +403,51 @@ libraryManagementSystem/
 | **CMake** | Cross-platform build system |
 | **SHA-256** | Password encryption algorithm |
 | **Localization** | Multi-language support with English/Chinese |
+| **Node.js + Express** | RESTful API server for web integration |
+| **Vue 3 + TypeScript** | Modern reactive frontend framework |
+| **Element Plus** | Vue 3 UI component library |
+| **Vite** | Next generation frontend tooling |
+| **Enhanced UI/UX** | White theme with improved accessibility and contrast |
+| **Complete Admin Panel** | Full book, user, and borrowing management |
+| **Improved Logging** | Comprehensive system monitoring and audit trails |
+
+---
+
+## Quick Start
+
+### Option 1: Command Line Interface (C++)
+
+```bash
+# Build the C++ program
+cmake -B build && cmake --build build
+
+# Run
+cd build
+./lib
+```
+
+### Option 2: Web Interface
+
+```bash
+# 1. Start API server
+cd api-server
+npm install
+npm start
+
+# 2. Start frontend (in another terminal)
+cd webui
+npm install
+npm run dev
+
+# 3. Open browser
+# Visit http://localhost:3000
+```
+
+Default admin account:
+- Username: `admin`
+- Password: `admin`
+
+For detailed deployment instructions, see [DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)
 
 ---
 
