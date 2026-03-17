@@ -82,7 +82,7 @@
     >
       <el-form :model="borrowForm" :rules="borrowRules" ref="borrowFormRef" label-width="120px">
         <el-form-item :label="t('book_title')">
-          <el-input v-model="selectedBook.title" disabled />
+          <el-input :model-value="selectedBook?.title || ''" disabled />
         </el-form-item>
         
         <el-form-item :label="t('borrow_days')" prop="days">

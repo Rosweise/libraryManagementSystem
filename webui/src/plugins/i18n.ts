@@ -88,20 +88,16 @@ const en = {
   edit_user: 'Edit User',
   user_details: 'User Details',
   student_id: 'Student ID',
-  username: 'Username',
   name: 'Name',
   college: 'College',
   class: 'Class',
   role: 'Role',
-  student: 'Student',
-  admin: 'Admin',
   all_roles: 'All Roles',
   student_id_placeholder: 'Enter student ID',
   username_placeholder: 'Enter username',
   name_placeholder: 'Enter name',
   college_placeholder: 'Enter college',
   class_placeholder: 'Enter class',
-  password_placeholder: 'Enter password',
   
   // Borrow management
   borrow_records: 'Borrow Records',
@@ -198,10 +194,7 @@ const en = {
   sort_by_due_date: 'Due Date',
   
   // Buttons and links
-  login_button: 'Login',
   register_button: 'Register',
-  register_link: 'Don\'t have an account? Register here',
-  forgot_password_link: 'Forgot password?',
   back_to_login: 'Back to Login',
   back_to_home: 'Back to Home',
   
@@ -218,9 +211,6 @@ const en = {
   previous_step: 'Previous',
   
   // Messages
-  login_success: 'Login successful',
-  login_failed: 'Login failed',
-  login_error: 'An error occurred during login',
   register_success: 'Registration successful',
   register_failed: 'Registration failed',
   register_error: 'An error occurred during registration',
@@ -259,9 +249,7 @@ const en = {
   fetch_student_borrowings_error: 'An error occurred while fetching student borrowings',
   
   // Validation messages
-  username_required: 'Username is required',
   username_length: 'Username must be 3-20 characters',
-  password_required: 'Password is required',
   password_length: 'Password must be 6-20 characters',
   password_mismatch: 'Passwords do not match',
   name_required: 'Name is required',
@@ -284,12 +272,6 @@ const en = {
   confirm_password_placeholder: 'Confirm new password',
   login_required: 'Please login first',
   book_unavailable: 'This book is currently unavailable',
-  password_too_short: 'Password is too short (minimum 3 characters)',
-  password_too_long: 'Password is too long (maximum 50 characters)',
-  invalid_credentials: 'Invalid username or password',
-  network_error: 'Network error, please check your connection',
-  login_welcome_message: 'Welcome to the library system!',
-  logging_in: 'Logging in...',
 
   // Other
   delete_confirm: 'Confirm deletion of {title}?',
@@ -314,8 +296,6 @@ const en = {
   recovery_token_status: 'Recovery Token Status',
   token_set_error: 'An error occurred while setting the recovery token',
   renew_confirmation: 'Are you sure you want to renew the book "{title}"?',
-  english: 'English',
-  chinese: '中文',
   change_language: 'Change Language',
 
   // Dashboard additions
@@ -427,20 +407,16 @@ const zh = {
   edit_user: '编辑用户',
   user_details: '用户详情',
   student_id: '学号',
-  username: '用户名',
   name: '姓名',
   college: '学院',
   class: '班级',
   role: '角色',
-  student: '学生',
-  admin: '管理员',
   all_roles: '所有角色',
   student_id_placeholder: '输入学号',
   username_placeholder: '输入用户名',
   name_placeholder: '输入姓名',
   college_placeholder: '输入学院',
   class_placeholder: '输入班级',
-  password_placeholder: '输入密码',
   
   // Borrow management
   borrow_records: '借阅记录',
@@ -537,10 +513,7 @@ const zh = {
   sort_by_due_date: '应还日期',
   
   // Buttons and links
-  login_button: '登录',
   register_button: '注册',
-  register_link: '还没有账号？立即注册',
-  forgot_password_link: '忘记密码？',
   back_to_login: '返回登录',
   back_to_home: '返回首页',
   
@@ -557,9 +530,6 @@ const zh = {
   previous_step: '上一步',
   
   // Messages
-  login_success: '登录成功',
-  login_failed: '登录失败',
-  login_error: '登录时发生错误',
   register_success: '注册成功',
   register_failed: '注册失败',
   register_error: '注册时发生错误',
@@ -598,9 +568,7 @@ const zh = {
   fetch_student_borrowings_error: '获取学生借阅记录时发生错误',
   
   // Validation messages
-  username_required: '用户名为必填项',
   username_length: '用户名长度必须在3-20个字符之间',
-  password_required: '密码为必填项',
   password_length: '密码长度必须在6-20个字符之间',
   password_mismatch: '两次输入的密码不一致',
   name_required: '姓名为必填项',
@@ -623,12 +591,6 @@ const zh = {
   confirm_password_placeholder: '确认新密码',
   login_required: '请先登录',
   book_unavailable: '此图书当前不可借阅',
-  password_too_short: '密码太短（最少3个字符）',
-  password_too_long: '密码太长（最多50个字符）',
-  invalid_credentials: '用户名或密码无效',
-  network_error: '网络错误，请检查您的连接',
-  login_welcome_message: '欢迎使用图书管理系统！',
-  logging_in: '正在登录...',
 
   // Other
   delete_confirm: '确认删除《{title}》？',
@@ -653,8 +615,6 @@ const zh = {
   recovery_token_status: '找回密码口令状态',
   token_set_error: '设置找回密码口令时发生错误',
   renew_confirmation: '您确定要续借图书《{title}》吗？',
-  english: '英语',
-  chinese: '中文',
   change_language: '切换语言',
 
   // Dashboard additions

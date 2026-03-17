@@ -165,7 +165,7 @@ const stats = ref<Stats>({
 const recentBorrowings = ref<BorrowRecord[]>([]);
 const overdueBooks = ref<BorrowRecord[]>([]);
 
-onMounted(async () => {
+const loadDashboardData = async () => {
   if (!userStore.user?.id) return;
   
   try {
@@ -189,6 +189,10 @@ onMounted(async () => {
     console.error('Error fetching dashboard data:', error);
     ElMessage.error(t('fetch_data_error'));
   }
+};
+
+onMounted(() => {
+  loadDashboardData();
 });
 
 const getStatusType = (record: BorrowRecord): string => {
@@ -227,8 +231,7 @@ const handleReturn = async (record: BorrowRecord) => {
     const response = await apiService.returnBook(record.recordId, userStore.user!.id);
     if (response.success) {
       ElMessage.success(t('return_success'));
-      // Refresh the data
-      onMounted();
+      await loadDashboardData();
     } else {
       ElMessage.error(response.error || t('return_failed'));
     }
@@ -252,8 +255,7 @@ const handleRenew = async (record: BorrowRecord) => {
     const response = await apiService.renewBook(record.recordId, userStore.user!.id);
     if (response.success && response.data) {
       ElMessage.success(t('renew_success'));
-      // Refresh the data
-      onMounted();
+      await loadDashboardData();
     } else {
       ElMessage.error(response.error || t('renew_failed'));
     }
