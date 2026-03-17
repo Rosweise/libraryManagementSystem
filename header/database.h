@@ -25,7 +25,7 @@
 
 #include <string>
 #include <vector>
-#include "lib/sqlite3.h"
+#include "sqlite3.h"
 
 // Maximum number of books a user may borrow at one time
 constexpr int MAX_BORROW_LIMIT = 5;

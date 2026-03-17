@@ -63,6 +63,7 @@ void handleQueryLogsByUser(const DatabaseManager &db);
 void handleQueryLogsByLevel(const DatabaseManager &db);
 void handleQueryLogsByAction(const DatabaseManager &db);
 void handleViewAllLogs(const DatabaseManager &db);
+void handleViewAuditLog(const DatabaseManager &db);
 
 void displayBooks(const std::vector<Book> &books);  //  显示图书信息
 void displayBorrowRecords(const std::vector<BorrowRecord> &records);  // 显示借阅记录
