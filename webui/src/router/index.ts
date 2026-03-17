@@ -5,8 +5,11 @@ import { useUserStore } from '@/store/user';
 const Login = () => import('@/views/EnhancedLogin.vue');
 const Register = () => import('@/views/Register.vue');
 const ForgotPassword = () => import('@/views/ForgotPassword.vue');
+const AdminLayout = () => import('@/views/admin/AdminLayout.vue');
 const AdminDashboard = () => import('@/views/admin/AdminDashboard.vue');
+const LogsManagement = () => import('@/views/admin/LogsManagement.vue');
 const StudentDashboard = () => import('@/views/student/StudentDashboard.vue');
+const StudentLayout = () => import('@/views/student/StudentLayout.vue');
 const BookManagement = () => import('@/views/admin/BookManagement.vue');
 const UserManagement = () => import('@/views/admin/UserManagement.vue');
 const BorrowManagement = () => import('@/views/admin/BorrowManagement.vue');
@@ -40,10 +43,15 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/admin',
-    name: 'AdminDashboard',
-    component: AdminDashboard,
+    component: AdminLayout,
     meta: { requiresAuth: true, role: 'ADMIN' },
     children: [
+      {
+        path: '',
+        name: 'AdminDashboard',
+        component: AdminDashboard,
+        meta: { requiresAuth: true, role: 'ADMIN' }
+      },
       {
         path: 'books',
         name: 'BookManagement',
@@ -63,6 +71,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true, role: 'ADMIN' }
       },
       {
+        path: 'logs',
+        name: 'LogsManagement',
+        component: LogsManagement,
+        meta: { requiresAuth: true, role: 'ADMIN', permission: 3 } // LOG_MANAGER
+      },
+      {
         path: 'account',
         name: 'AdminAccountManagement',
         component: AccountManagement,
@@ -72,10 +86,15 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/student',
-    name: 'StudentDashboard',
-    component: StudentDashboard,
+    component: StudentLayout,
     meta: { requiresAuth: true, role: 'STUDENT' },
     children: [
+      {
+        path: '',
+        name: 'StudentDashboard',
+        component: StudentDashboard,
+        meta: { requiresAuth: true, role: 'STUDENT' }
+      },
       {
         path: 'search',
         name: 'SearchBooks',
@@ -118,17 +137,13 @@ router.beforeEach((to, from, next) => {
       next('/login');
     } else if (to.meta.role && userStore.user?.role !== to.meta.role) {
       next('/login'); // Redirect unauthorized users
-    } else if (typeof to.meta.permission === 'number' && userStore.user) {
+    } else if (typeof to.meta.permission === 'number') {
       // Check permission level for admin functions
-      if (userStore.user.role === 'ADMIN' && userStore.user.permissionLevel !== undefined) {
-        if (userStore.user.permissionLevel > to.meta.permission) {
-          next('/admin'); // Redirect to dashboard if insufficient permissions
-        } else {
-          next();
-        }
-      } else {
-        next('/admin'); // Redirect if not admin
-      }
+      if (!userStore.user || userStore.user.role !== 'ADMIN') return next('/admin');
+
+      const currentLevel = userStore.user.permissionLevel ?? 0;
+      if (currentLevel > to.meta.permission) return next('/admin');
+      next();
     } else {
       next();
     }

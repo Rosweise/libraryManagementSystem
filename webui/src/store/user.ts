@@ -21,7 +21,11 @@ export const useUserStore = defineStore('user', {
     hasPermission(): (level: number) => boolean {
       return (requiredLevel: number) => {
         if (!this.user || this.user.role !== 'ADMIN') return false;
-        return this.user.permissionLevel !== undefined && this.user.permissionLevel <= requiredLevel;
+
+        // Backward compatibility: old backend responses may omit permissionLevel.
+        if (this.user.permissionLevel === undefined) return true;
+
+        return this.user.permissionLevel <= requiredLevel;
       };
     }
   },
@@ -34,7 +38,11 @@ export const useUserStore = defineStore('user', {
     },
     
     setUser(user: User) {
-      this.user = user;
+      this.user = {
+        ...user,
+        hasRecoveryToken: user.hasRecoveryToken ?? false,
+        permissionLevel: user.role === 'ADMIN' ? (user.permissionLevel ?? 0) : undefined
+      };
       this.isAuthenticated = true;
     },
     

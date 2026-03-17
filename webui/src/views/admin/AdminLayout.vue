@@ -24,7 +24,7 @@
               <span>{{ t('book_management') }}</span>
             </template>
             <el-menu-item index="/admin/books">{{ t('book_list') }}</el-menu-item>
-            <el-menu-item index="/admin/books/add">{{ t('add_book') }}</el-menu-item>
+            <el-menu-item index="/admin/books">{{ t('add_book') }}</el-menu-item>
           </el-sub-menu>
           
           <el-sub-menu index="user-management" v-if="userStore.hasPermission(2)">
@@ -33,7 +33,7 @@
               <span>{{ t('user_management') }}</span>
             </template>
             <el-menu-item index="/admin/users">{{ t('user_list') }}</el-menu-item>
-            <el-menu-item index="/admin/users/add">{{ t('add_user') }}</el-menu-item>
+            <el-menu-item index="/admin/users">{{ t('add_user') }}</el-menu-item>
           </el-sub-menu>
           
           <el-sub-menu index="borrow-management" v-if="userStore.hasPermission(0)">

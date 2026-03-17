@@ -14,6 +14,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
 
 // Database connection
 const dbPath = path.join(__dirname, '..', 'library.db');
@@ -668,51 +669,6 @@ app.get('/api/logs', authenticateToken, (req, res) => {
   });
 });
 
-// ============ User Management Endpoints ============
-
-// Get users (admin only)
-app.get('/api/users', authenticateToken, (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ message: 'Admin access required' });
-  }
-
-  const { role, page = 0, size = 10 } = req.query;
-  const offset = parseInt(page) * parseInt(size);
-
-  let sql = 'SELECT id, username, name, college, className, role FROM Users';
-  let params = [];
-
-  if (role) {
-    sql += ' WHERE role = ?';
-    params.push(role);
-  }
-
-  sql += ' LIMIT ? OFFSET ?';
-  params.push(parseInt(size), offset);
-
-  db.all(sql, params, (err, users) => {
-    if (err) {
-      return res.status(500).json({ message: 'Failed to fetch users' });
-    }
-
-    let countSql = 'SELECT COUNT(*) as count FROM Users';
-    let countParams = [];
-    if (role) {
-      countSql += ' WHERE role = ?';
-      countParams.push(role);
-    }
-
-    db.get(countSql, countParams, (err, result) => {
-      const totalCount = result ? result.count : 0;
-      const totalPages = Math.ceil(totalCount / parseInt(size));
-
-      res.json({ users, totalPages, totalCount });
-    });
-  });
-});
-
-// Middleware to parse JSON bodies
-app.use(express.json());
 
 // Get full borrow records (admin only)
 app.get('/api/borrowings/full', authenticateToken, (req, res) => {
@@ -746,7 +702,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`API Server running on http://localhost:${PORT}`);
   console.log(`Database: ${dbPath}`);
   logAction('INFO', 'API Server started', 'system', 'startup');
