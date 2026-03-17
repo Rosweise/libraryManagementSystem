@@ -18,14 +18,10 @@
             <span>{{ t('dashboard') }}</span>
           </el-menu-item>
           
-          <el-sub-menu index="book-management">
-            <template #title>
-              <el-icon><Collection /></el-icon>
-              <span>{{ t('book_management') }}</span>
-            </template>
-            <el-menu-item index="/admin/books">{{ t('book_list') }}</el-menu-item>
-            <el-menu-item index="/admin/books">{{ t('add_book') }}</el-menu-item>
-          </el-sub-menu>
+          <el-menu-item index="/admin/books">
+            <el-icon><Collection /></el-icon>
+            <span>{{ t('book_management') }}</span>
+          </el-menu-item>
           
           <el-sub-menu index="user-management" v-if="userStore.hasPermission(2)">
             <template #title>
@@ -33,7 +29,6 @@
               <span>{{ t('user_management') }}</span>
             </template>
             <el-menu-item index="/admin/users">{{ t('user_list') }}</el-menu-item>
-            <el-menu-item index="/admin/users">{{ t('add_user') }}</el-menu-item>
           </el-sub-menu>
           
           <el-sub-menu index="borrow-management" v-if="userStore.hasPermission(0)">
@@ -42,7 +37,6 @@
               <span>{{ t('borrow_management') }}</span>
             </template>
             <el-menu-item index="/admin/borrowings">{{ t('borrow_records') }}</el-menu-item>
-            <el-menu-item index="/admin/borrowings/query">{{ t('query_student') }}</el-menu-item>
           </el-sub-menu>
           
           <el-sub-menu index="log-management" v-if="userStore.hasPermission(3)">
@@ -64,6 +58,11 @@
       <el-container>
         <el-header class="header">
           <div class="header-left">
+            <el-tooltip :content="t('back_to_home')" placement="bottom">
+              <el-button @click="goBack" class="back-btn">
+                <el-icon><ArrowLeft /></el-icon>
+              </el-button>
+            </el-tooltip>
             <el-button @click="toggleCollapse" class="collapse-btn">
               <el-icon><Menu /></el-icon>
             </el-button>
@@ -114,8 +113,7 @@ import {
   Setting, 
   Menu, 
   ArrowDown,
-  CaretLeft,
-  CaretRight
+  ArrowLeft
 } from '@element-plus/icons-vue';
 
 const { t } = useI18n();
@@ -126,6 +124,14 @@ const isCollapse = ref(false);
 
 const toggleCollapse = () => {
   isCollapse.value = !isCollapse.value;
+};
+
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back();
+    return;
+  }
+  router.push('/admin');
 };
 
 const handleCommand = async (command: string) => {
@@ -203,6 +209,10 @@ const handleCommand = async (command: string) => {
 
 .collapse-btn {
   margin-right: 20px;
+}
+
+.back-btn {
+  margin-right: 10px;
 }
 
 .header-right {

@@ -84,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import apiService from '@/api';
@@ -121,8 +121,9 @@ const pagination = ref<Pagination>({
   total: 0
 });
 
-// Fetch logs initially
-fetchLogs();
+onMounted(() => {
+  fetchLogs();
+});
 
 const fetchLogs = async () => {
   loading.value = true;

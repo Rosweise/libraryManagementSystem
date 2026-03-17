@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { Book, User, BorrowRecord, FullBorrowRecord, LoginCredentials, RegisterData, LogEntry, ApiResponse } from '@/types';
+import { Book, User, BorrowRecord, FullBorrowRecord, StudentBorrowRecord, LoginCredentials, RegisterData, LogEntry, ApiResponse } from '@/types';
 
 class ApiService {
   private api: AxiosInstance;
@@ -219,9 +219,9 @@ class ApiService {
     }
   }
 
-  async getStudentBorrowRecords(studentId: string): Promise<ApiResponse<FullBorrowRecord[]>> {
+  async getStudentBorrowRecords(studentId: string): Promise<ApiResponse<StudentBorrowRecord[]>> {
     try {
-      const response: AxiosResponse<FullBorrowRecord[]> = await this.api.get(`/borrowings/student/${studentId}`);
+      const response: AxiosResponse<StudentBorrowRecord[]> = await this.api.get(`/borrowings/student/${studentId}`);
       return { success: true, data: response.data };
     } catch (error: any) {
       return { success: false, error: error.response?.data?.message || 'Failed to fetch student borrow records' };

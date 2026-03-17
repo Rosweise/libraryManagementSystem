@@ -59,16 +59,28 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true, role: 'ADMIN', permission: 1 } // BOOK_MANAGER
       },
       {
+        path: 'books/add',
+        redirect: '/admin/books'
+      },
+      {
         path: 'users',
         name: 'UserManagement',
         component: UserManagement,
         meta: { requiresAuth: true, role: 'ADMIN', permission: 2 } // USER_MANAGER
       },
       {
+        path: 'users/add',
+        redirect: '/admin/users'
+      },
+      {
         path: 'borrowings',
         name: 'BorrowManagement',
         component: BorrowManagement,
         meta: { requiresAuth: true, role: 'ADMIN' }
+      },
+      {
+        path: 'borrowings/query',
+        redirect: '/admin/borrowings'
       },
       {
         path: 'logs',
@@ -81,6 +93,10 @@ const routes: Array<RouteRecordRaw> = [
         name: 'AdminAccountManagement',
         component: AccountManagement,
         meta: { requiresAuth: true, role: 'ADMIN' }
+      },
+      {
+        path: ':pathMatch(.*)*',
+        redirect: '/admin'
       }
     ]
   },
@@ -112,6 +128,10 @@ const routes: Array<RouteRecordRaw> = [
         name: 'StudentAccountManagement',
         component: AccountManagement,
         meta: { requiresAuth: true, role: 'STUDENT' }
+      },
+      {
+        path: ':pathMatch(.*)*',
+        redirect: '/student'
       }
     ]
   },

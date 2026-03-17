@@ -1,7 +1,13 @@
 <template>
   <div class="user-management">
     <div class="header-section">
-      <h2>{{ t('user_management') }}</h2>
+      <div class="header-left">
+        <el-button @click="goBack" class="back-btn" plain>
+          <el-icon><ArrowLeft /></el-icon>
+          {{ t('back_to_home') }}
+        </el-button>
+        <h2>{{ t('user_management') }}</h2>
+      </div>
       <el-button type="primary" @click="addNewUser" class="add-user-btn">
         <el-icon><Plus /></el-icon>
         {{ t('add_new_user') }}
@@ -222,16 +228,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import apiService from '@/api';
 import { User, PermissionLevel } from '@/types';
 
 // Icons
-import { Plus } from '@element-plus/icons-vue';
+import { Plus, ArrowLeft } from '@element-plus/icons-vue';
 
 const { t } = useI18n();
+const router = useRouter();
 
 interface SearchForm {
   keyword: string;
@@ -248,6 +256,8 @@ interface PasswordForm {
   newPassword: string;
   confirmPassword: string;
 }
+
+type EditableUser = User & { password?: string };
 
 const users = ref<User[]>([]);
 const loading = ref(false);
@@ -268,7 +278,7 @@ const pagination = ref<Pagination>({
   total: 0
 });
 
-const currentUser = ref<User>({
+const currentUser = ref<EditableUser>({
   id: '',
   username: '',
   name: '',
@@ -332,8 +342,17 @@ const passwordRules = {
   ]
 };
 
-// Fetch users initially
-fetchUsers();
+onMounted(() => {
+  fetchUsers();
+});
+
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back();
+    return;
+  }
+  router.push('/admin');
+};
 
 const fetchUsers = async () => {
   loading.value = true;
@@ -420,7 +439,7 @@ const viewUserDetails = (user: User) => {
   });
 };
 
-const getPermissionLevelText = (level: PermissionLevel): string => {
+const getPermissionLevelText = (level: PermissionLevel | undefined): string => {
   switch (level) {
     case PermissionLevel.SUPER_ADMIN: return t('super_admin');
     case PermissionLevel.BOOK_MANAGER: return t('book_manager');
@@ -440,7 +459,8 @@ const saveUser = async () => {
     
     if (isEdit.value) {
       // Update existing user
-      const response = await apiService.updateUser(currentUser.value);
+      const { password: _password, ...userPayload } = currentUser.value;
+      const response = await apiService.updateUser(userPayload);
       if (response.success) {
         ElMessage.success(t('user_updated_success'));
         dialogVisible.value = false;
@@ -527,6 +547,16 @@ const closePasswordDialog = () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-btn {
+  padding: 8px 12px;
 }
 
 .add-user-btn {

@@ -14,7 +14,6 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.json());
 
 // Database connection
 const dbPath = path.join(__dirname, '..', 'library.db');
@@ -669,47 +668,51 @@ app.get('/api/logs', authenticateToken, (req, res) => {
   });
 });
 
+// ============ User Management Endpoints ============
 
-// Get borrow records for a specific student (admin only)
-app.get('/api/borrowings/student/:studentId', authenticateToken, (req, res) => {
+// Get users (admin only)
+app.get('/api/users', authenticateToken, (req, res) => {
   if (req.user.role !== 'ADMIN') {
     return res.status(403).json({ message: 'Admin access required' });
   }
 
-  const { studentId } = req.params;
-  const sql = `
-    SELECT br.recordId,
-           u.id as studentId,
-           u.name as studentName,
-           u.college as studentCollege,
-           u.className as studentClass,
-           br.bookIsbn,
-           b.title as bookTitle,
-           br.borrowDate,
-           br.dueDate,
-           br.returnDate,
-           CASE
-             WHEN br.returnDate IS NULL AND br.dueDate < date('now') THEN 1
-             ELSE 0
-           END as isOverdue
-    FROM BorrowRecords br
-    JOIN Users u ON br.userId = u.id
-    JOIN Books b ON br.bookIsbn = b.isbn
-    WHERE br.userId = ?
-    ORDER BY br.borrowDate DESC
-  `;
+  const { role, page = 0, size = 10 } = req.query;
+  const offset = parseInt(page) * parseInt(size);
 
-  db.all(sql, [studentId], (err, records) => {
+  let sql = 'SELECT id, username, name, college, className, role FROM Users';
+  let params = [];
+
+  if (role) {
+    sql += ' WHERE role = ?';
+    params.push(role);
+  }
+
+  sql += ' LIMIT ? OFFSET ?';
+  params.push(parseInt(size), offset);
+
+  db.all(sql, params, (err, users) => {
     if (err) {
-      logAction('ERROR', `Failed to query student borrow records: ${err.message}`, req.user.username, 'query_student_borrowings');
-      return res.status(500).json({ message: 'Failed to fetch student borrow records' });
+      return res.status(500).json({ message: 'Failed to fetch users' });
     }
 
-    logAction('INFO', `Queried borrow records for student: ${studentId}`, req.user.username, 'query_student_borrowings');
-    res.json(records);
+    let countSql = 'SELECT COUNT(*) as count FROM Users';
+    let countParams = [];
+    if (role) {
+      countSql += ' WHERE role = ?';
+      countParams.push(role);
+    }
+
+    db.get(countSql, countParams, (err, result) => {
+      const totalCount = result ? result.count : 0;
+      const totalPages = Math.ceil(totalCount / parseInt(size));
+
+      res.json({ users, totalPages, totalCount });
+    });
   });
 });
 
+// Middleware to parse JSON bodies
+app.use(express.json());
 
 // Get full borrow records (admin only)
 app.get('/api/borrowings/full', authenticateToken, (req, res) => {
@@ -743,7 +746,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
   console.log(`API Server running on http://localhost:${PORT}`);
   console.log(`Database: ${dbPath}`);
   logAction('INFO', 'API Server started', 'system', 'startup');
@@ -760,6 +763,7 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 });
+
 
 
 

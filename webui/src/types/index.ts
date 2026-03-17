@@ -51,6 +51,11 @@ export interface FullBorrowRecord {
   isOverdue: boolean;
 }
 
+export interface StudentBorrowRecord extends FullBorrowRecord {
+  bookIsbn: string;
+  returnDate?: string | null;
+}
+
 export interface LoginCredentials {
   username: string;
   password: string;

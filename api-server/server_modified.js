@@ -670,47 +670,6 @@ app.get('/api/logs', authenticateToken, (req, res) => {
 });
 
 
-// Get borrow records for a specific student (admin only)
-app.get('/api/borrowings/student/:studentId', authenticateToken, (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ message: 'Admin access required' });
-  }
-
-  const { studentId } = req.params;
-  const sql = `
-    SELECT br.recordId,
-           u.id as studentId,
-           u.name as studentName,
-           u.college as studentCollege,
-           u.className as studentClass,
-           br.bookIsbn,
-           b.title as bookTitle,
-           br.borrowDate,
-           br.dueDate,
-           br.returnDate,
-           CASE
-             WHEN br.returnDate IS NULL AND br.dueDate < date('now') THEN 1
-             ELSE 0
-           END as isOverdue
-    FROM BorrowRecords br
-    JOIN Users u ON br.userId = u.id
-    JOIN Books b ON br.bookIsbn = b.isbn
-    WHERE br.userId = ?
-    ORDER BY br.borrowDate DESC
-  `;
-
-  db.all(sql, [studentId], (err, records) => {
-    if (err) {
-      logAction('ERROR', `Failed to query student borrow records: ${err.message}`, req.user.username, 'query_student_borrowings');
-      return res.status(500).json({ message: 'Failed to fetch student borrow records' });
-    }
-
-    logAction('INFO', `Queried borrow records for student: ${studentId}`, req.user.username, 'query_student_borrowings');
-    res.json(records);
-  });
-});
-
-
 // Get full borrow records (admin only)
 app.get('/api/borrowings/full', authenticateToken, (req, res) => {
   if (req.user.role !== 'ADMIN') {
@@ -760,6 +719,7 @@ process.on('SIGINT', () => {
     process.exit(0);
   });
 });
+
 
 
 

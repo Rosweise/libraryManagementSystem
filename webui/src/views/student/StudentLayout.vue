@@ -39,6 +39,11 @@
       <el-container>
         <el-header class="header">
           <div class="header-left">
+            <el-tooltip :content="t('back_to_home')" placement="bottom">
+              <el-button @click="goBack" class="back-btn">
+                <el-icon><ArrowLeft /></el-icon>
+              </el-button>
+            </el-tooltip>
             <el-button @click="toggleCollapse" class="collapse-btn">
               <el-icon><Menu /></el-icon>
             </el-button>
@@ -94,7 +99,7 @@ import {
   Setting, 
   Menu, 
   ArrowDown,
-  Bell
+  ArrowLeft
 } from '@element-plus/icons-vue';
 
 const { t } = useI18n();
@@ -119,6 +124,14 @@ onMounted(async () => {
 
 const toggleCollapse = () => {
   isCollapse.value = !isCollapse.value;
+};
+
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back();
+    return;
+  }
+  router.push('/student');
 };
 
 const goToBorrowings = () => {
@@ -200,6 +213,10 @@ const handleCommand = async (command: string) => {
 
 .collapse-btn {
   margin-right: 20px;
+}
+
+.back-btn {
+  margin-right: 10px;
 }
 
 .header-right {

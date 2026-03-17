@@ -1,6 +1,12 @@
 <template>
   <div class="account-management">
-    <h2>{{ t('account_management') }}</h2>
+    <div class="account-header">
+      <el-button @click="goBack" class="back-btn" plain>
+        <el-icon><ArrowLeft /></el-icon>
+        {{ t('back_to_home') }}
+      </el-button>
+      <h2>{{ t('account_management') }}</h2>
+    </div>
     
     <el-tabs v-model="activeTab" class="account-tabs">
       <el-tab-pane :label="t('profile')" name="profile">
@@ -148,14 +154,17 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
+import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { useUserStore } from '@/store/user';
 import { useI18n } from 'vue-i18n';
 import apiService from '@/api';
 import { User } from '@/types';
+import { ArrowLeft } from '@element-plus/icons-vue';
 
 const { t } = useI18n();
 const userStore = useUserStore();
+const router = useRouter();
 
 const activeTab = ref('profile');
 const isEditingProfile = ref(false);
@@ -225,6 +234,20 @@ const tokenRules = {
     { required: true, message: t('token_required'), trigger: 'blur' },
     { min: 3, max: 50, message: t('token_length'), trigger: 'blur' }
   ]
+};
+
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back();
+    return;
+  }
+
+  if (userStore.isAdmin) {
+    router.push('/admin');
+    return;
+  }
+
+  router.push('/student');
 };
 
 onMounted(() => {
@@ -325,6 +348,20 @@ const setRecoveryToken = async () => {
 <style scoped>
 .account-management {
   padding: 20px;
+}
+
+.account-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.account-header h2 {
+  margin: 0;
+}
+
+.back-btn {
+  padding: 8px 12px;
 }
 
 .account-tabs {
