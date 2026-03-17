@@ -24,6 +24,8 @@
 #include <vector>
 #include <limits>
 #include <iomanip>
+#include <map>
+#include <chrono>
 #include "../header/database.h"
 #include "../header/utils.h"
 #include "../header/localization.h"
@@ -42,17 +44,18 @@ void handleReturnBook(const DatabaseManager &db, const User &currentUser);  // �
 void handleRenewBook(const DatabaseManager &db, const User &currentUser);   // 续借图书
 void handleMyBorrowedBooks(const DatabaseManager &db, const User &currentUser);  // 普通用户查看借阅信息
 
-void handleAddUser(const DatabaseManager &db);  // 管理员添加用户
+void handleAddUser(const DatabaseManager &db, const User &adminUser);  // 管理员添加用户
 void handleStudentManagement(const DatabaseManager &db);  // 学生管理
 void handleListAllBorrowRecords(const DatabaseManager &db);  // 列出所有借阅记录
 void handleRegister(const DatabaseManager &db);  // 登记信息
 bool handleUpdateMyInfo(const DatabaseManager &db, User &currentUser);  // 普通用户更新自己的登记信息
 
 void handleForgotPassword(const DatabaseManager &db);    // 忘记密码/找回密码
-void handleAdminChangePassword(const DatabaseManager &db);  // 管理员用户帮助修改密码
+void handleAdminChangePassword(const DatabaseManager &db, const User &adminUser);  // 管理员用户帮助修改密码
 void handleStudentChangePassword(const DatabaseManager &db, const User &currentUser);  // 普通用户修改密码
 void handleSetRecoveryToken(const DatabaseManager &db, User &currentUser);  // 安全口令
 void handleViewMyInfo(const User &currentUser);  // 查看自己的信息
+
 
 // Log management functions
 void handleQueryLogsByTime(const DatabaseManager &db);
@@ -65,6 +68,20 @@ void displayBooks(const std::vector<Book> &books);  //  显示图书信息
 void displayBorrowRecords(const std::vector<BorrowRecord> &records);  // 显示借阅记录
 void displayStudents(const std::vector<User> &students);  // 显示普通永固/学生用户信息
 void displayFullBorrowRecords(const std::vector<FullBorrowRecord> &records);  // 显示全部借阅记录
+
+// ------ 安全：登录频率限制 ------
+struct LoginAttemptInfo {
+    int failedCount = 0;
+    std::chrono::steady_clock::time_point lockedUntil = std::chrono::steady_clock::now();
+};
+static std::map<std::string, LoginAttemptInfo> g_loginAttempts;
+constexpr int MAX_LOGIN_ATTEMPTS = 5;        // 最多5次连续失败
+constexpr int LOCKOUT_SECONDS = 300;         // 锁定5分钟
+
+// 验证密码是否满足最低安全要求（至少8个字符）
+static bool isValidPassword(const std::string &pwd) {
+    return pwd.length() >= 8;
+}
 
 
 int pause() {
@@ -130,13 +147,15 @@ void showAdminMenu(const DatabaseManager &db, const User &currentUser) {
                 do {
                     clearScreen();
                     std::cout << "--- " << _("user_management") << " ---\n";
-                    std::cout << _("add_new_user") << "\n" << _("change_student_password") << "\n" << _("return_to_main") << "\n";
+                    std::cout << _("add_new_user") << "\n" << _("change_student_password") << "\n" << _("view_audit_log") << "\n" << _("return_to_main") << "\n";
                     std::cout << _("enter_choice");
                     userChoice = getIntInput();
                     switch (userChoice) {
-                        case 1: handleAddUser(db);
+                        case 1: handleAddUser(db, currentUser);
                             break;
-                        case 2: handleAdminChangePassword(db);
+                        case 2: handleAdminChangePassword(db, currentUser);
+                            break;
+                        case 3: handleViewAuditLog(db);
                             break;
                         default: ;
                     }
@@ -161,6 +180,7 @@ void showAdminMenu(const DatabaseManager &db, const User &currentUser) {
                 } while (recordChoice != 0);
                 break;
             }
+
             case 4: {
                 int logChoice;
                 do {
@@ -190,6 +210,7 @@ void showAdminMenu(const DatabaseManager &db, const User &currentUser) {
                 } while (logChoice != 0);
                 break;
             }
+
             case 0: std::cout << _("logging_out") << "\n";
                 break;
             default: std::cout << _("invalid_choice") << "\n";
@@ -283,10 +304,23 @@ void login(const DatabaseManager &db) {
     std::cout << "--- " << _("admin_menu_title") << " ---\n";  // Using admin menu title as generic login title
     std::cout << _("username_prompt");
     std::getline(std::cin, username);
+
+    // Check if this account is currently locked out
+    auto &info = g_loginAttempts[username];
+    auto now = std::chrono::steady_clock::now();
+    if (info.failedCount >= MAX_LOGIN_ATTEMPTS && now < info.lockedUntil) {
+        auto remaining = std::chrono::duration_cast<std::chrono::seconds>(info.lockedUntil - now).count();
+        int remainingMinutes = static_cast<int>((remaining + 59) / 60); // ceil: round up to next whole minute
+        std::cout << _("account_locked") << remainingMinutes << _("account_locked_minutes") << "\n";
+        pause();
+        return;
+    }
+
     std::cout << _("password_prompt");
     std::getline(std::cin, password);
 
     User user = db.authenticateUser(username, password);
+
 
     if (user.role == "ADMIN") {
         Logger::getInstance().info("Admin user logged in successfully", username, "login");
@@ -325,7 +359,7 @@ int main() {
         adminUser.username = "admin";
         adminUser.name = "管理员";
         adminUser.role = "ADMIN";
-        db.addUser(adminUser, "admin");
+        db.addUser(adminUser, "admin", true);  // Force password change on first login
         pause();
     }
 
@@ -746,9 +780,24 @@ void handleBorrowBook(const DatabaseManager &db, const User &currentUser) {
         return;
     }
 
+    // Pre-checks to give the user a specific error message.
+    // Note: The actual enforcement also runs inside borrowBook's transaction,
+    // so these checks are safe even though they precede the atomic operation.
+    if (db.isBookAlreadyBorrowedByUser(currentUser.id, isbn)) {
+        std::cout << _("duplicate_borrow_error") << "\n";
+        pause();
+        return;
+    }
+    if (db.getActiveBorrowCount(currentUser.id) >= MAX_BORROW_LIMIT) {
+        std::cout << _("borrow_limit_exceeded") << "\n";
+        pause();
+        return;
+    }
+
     if (db.borrowBook(currentUser.id, isbn, days)) {
         Logger::getInstance().info("Book borrowed (ISBN: " + isbn + ") for " + std::to_string(days) + " days", currentUser.username, "borrow_book");
         std::cout << _("borrow_success") << "\n";
+        db.logAction(currentUser.id, "BORROW", "Borrowed ISBN: " + isbn + " for " + std::to_string(days) + " days");
     } else {
         Logger::getInstance().warn("Failed to borrow book (ISBN: " + isbn + ")", currentUser.username, "borrow_book");
         std::cout << _("borrow_failed") << "\n";
@@ -772,6 +821,7 @@ void handleReturnBook(const DatabaseManager &db, const User &currentUser) {
     if (db.returnBook(recordId, currentUser.id)) {
         Logger::getInstance().info("Book returned (Record ID: " + std::to_string(recordId) + ")", currentUser.username, "return_book");
         std::cout << _("return_success") << "\n";
+        db.logAction(currentUser.id, "RETURN", "Returned record ID: " + std::to_string(recordId));
     } else {
         Logger::getInstance().warn("Failed to return book (Record ID: " + std::to_string(recordId) + ")", currentUser.username, "return_book");
         std::cout << _("return_failed") << "\n";
@@ -793,6 +843,7 @@ void handleRenewBook(const DatabaseManager &db, const User &currentUser) {
 
     if (const int recordId = getIntInput(); db.renewBook(recordId, currentUser.id)) {
         std::cout << _("renew_success") << "\n";
+        db.logAction(currentUser.id, "RENEW", "Renewed record ID: " + std::to_string(recordId));
     } else {
         std::cout << _("renew_failed") << "\n";
     }
@@ -807,7 +858,7 @@ void handleMyBorrowedBooks(const DatabaseManager &db, const User &currentUser) {
     pause();
 }
 
-void handleAddUser(const DatabaseManager &db) {
+void handleAddUser(const DatabaseManager &db, const User &adminUser) {
     User newUser;
     std::string password;
     std::cout << "--- " << _("add_new_user") << " ---\n";
@@ -835,8 +886,15 @@ void handleAddUser(const DatabaseManager &db) {
         return;
     }
 
+    if (!isValidPassword(password)) {
+        std::cout << _("password_too_short") << "\n";
+        pause();
+        return;
+    }
+
     if (db.addUser(newUser, password)) {
         std::cout << _("user_add_success") << newUser.username << _("user_add_success_part2") << "\n";
+        db.logAction(adminUser.username, "ADD_USER", "Added user: " + newUser.username + " role: " + newUser.role);
     } else {
         std::cout << _("user_add_failed") << "\n";
     }
@@ -894,6 +952,12 @@ void handleRegister(const DatabaseManager &db) {
     std::getline(std::cin, newUser.className);
     std::cout << _("add_password_prompt");
     std::getline(std::cin, password);
+
+    if (!isValidPassword(password)) {
+        std::cout << _("password_too_short") << "\n";
+        pause();
+        return;
+    }
 
     if (db.addUser(newUser, password)) {
         std::cout << _("registration_success") << "\n";
@@ -962,6 +1026,12 @@ void handleForgotPassword(const DatabaseManager &db) {
         return;
     }
 
+    if (!isValidPassword(newPassword)) {
+        std::cout << _("password_too_short") << "\n";
+        pause();
+        return;
+    }
+
     if (db.recoverPassword(username, token, newPassword)) {
         std::cout << _("password_reset_success") << "\n";
     } else {
@@ -970,7 +1040,7 @@ void handleForgotPassword(const DatabaseManager &db) {
     pause();
 }
 
-void handleAdminChangePassword(const DatabaseManager &db) {
+void handleAdminChangePassword(const DatabaseManager &db, const User &adminUser) {
     clearScreen();
     std::cout << "--- " << _("student_change_password") << " ---\n";
     std::string username, newPassword, confirmPassword;
@@ -994,8 +1064,15 @@ void handleAdminChangePassword(const DatabaseManager &db) {
         return;
     }
 
+    if (!isValidPassword(newPassword)) {
+        std::cout << _("password_too_short") << "\n";
+        pause();
+        return;
+    }
+
     if (db.updatePassword(username, newPassword)) {
         std::cout << _("password_change_success") << "\n";
+        db.logAction(adminUser.username, "CHANGE_PASSWORD", "Changed password for: " + username);
     } else {
         std::cout << _("password_change_failed") << "\n";
     }
@@ -1027,8 +1104,15 @@ void handleStudentChangePassword(const DatabaseManager &db, const User &currentU
         return;
     }
 
+    if (!isValidPassword(newPassword)) {
+        std::cout << _("password_too_short") << "\n";
+        pause();
+        return;
+    }
+
     if (db.updatePassword(currentUser.username, newPassword)) {
         std::cout << _("password_change_success") << "\n";
+        db.logAction(currentUser.username, "CHANGE_PASSWORD", "Student changed own password");
     } else {
         std::cout << _("password_change_failed") << "\n";
     }
@@ -1070,4 +1154,87 @@ void handleViewMyInfo(const User &currentUser) {
     std::cout << _("role_label") << "    " << currentUser.role << std::endl;
     std::cout << _("recovery_token_status") << " " << (currentUser.hasRecoveryToken ? _("token_set") : _("token_not_set")) << std::endl;
     pause();
+}
+
+void handleViewAuditLog(const DatabaseManager &db) {
+    clearScreen();
+    std::cout << "--- " << _("audit_log_title") << " ---\n";
+    std::cout << _("audit_log_lines_prompt");
+    std::string input;
+    std::getline(std::cin, input);
+    int limit = 20;
+    if (!input.empty()) {
+        try { limit = std::stoi(input); } catch (...) {}
+    }
+    if (limit < 1) limit = 20;
+
+    auto records = db.getRecentAuditLogs(limit);
+    if (records.empty()) {
+        std::cout << _("no_audit_records") << "\n";
+    } else {
+        std::cout << std::left
+                  << std::setw(6)  << _("audit_table_header_id")
+                  << std::setw(20) << _("audit_table_header_time")
+                  << std::setw(16) << _("audit_table_header_user")
+                  << std::setw(20) << _("audit_table_header_action")
+                  << _("audit_table_header_detail") << "\n";
+        std::cout << std::string(90, '-') << "\n";
+        for (const auto &r : records) {
+            std::cout << std::left
+                      << std::setw(6)  << r.id
+                      << std::setw(20) << r.timestamp
+                      << std::setw(16) << r.userId
+                      << std::setw(20) << r.action
+                      << r.detail << "\n";
+        }
+    }
+    pause();
+}
+
+void handleViewStatistics(const DatabaseManager &db) {
+    clearScreen();
+    std::cout << "--- " << _("statistics_title") << " ---\n";
+    const SystemStats s = db.getSystemStats();
+    std::cout << _("stats_total_book_titles") << s.totalBookTitles << "\n";
+    std::cout << _("stats_total_copies")      << s.totalCopies << "\n";
+    std::cout << _("stats_available_copies")  << s.availableCopies << "\n";
+    std::cout << _("stats_total_students")    << s.totalStudents << "\n";
+    std::cout << _("stats_active_borrowings") << s.activeBorrowings << "\n";
+    std::cout << _("stats_overdue_count")     << s.overdueCount << "\n";
+    if (s.topBorrowedBookTitle.empty()) {
+        std::cout << _("stats_top_borrowed") << _("stats_no_borrows_yet") << "\n";
+    } else {
+        std::cout << _("stats_top_borrowed") << s.topBorrowedBookTitle
+                  << _("stats_borrow_count") << s.topBorrowedBookCount << _("stats_borrow_count_end") << "\n";
+    }
+    pause();
+}
+
+bool handleForcedPasswordChange(const DatabaseManager &db, User &currentUser) {
+    std::string newPassword, confirmPassword;
+    std::cout << _("new_password_prompt");
+    std::getline(std::cin, newPassword);
+    std::cout << _("confirm_password_prompt");
+    std::getline(std::cin, confirmPassword);
+
+    if (newPassword != confirmPassword) {
+        std::cout << _("password_mismatch") << "\n";
+        pause();
+        return false;
+    }
+    if (!isValidPassword(newPassword)) {
+        std::cout << _("password_too_short") << "\n";
+        pause();
+        return false;
+    }
+    if (db.updatePassword(currentUser.username, newPassword)) {
+        std::cout << _("password_change_success") << "\n";
+        currentUser.passwordNeedsChange = false;
+        db.logAction(currentUser.username, "FORCED_PW_CHANGE", "Completed mandatory password change");
+        pause();
+        return true;
+    }
+    std::cout << _("password_change_failed") << "\n";
+    pause();
+    return false;
 }
