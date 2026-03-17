@@ -4,7 +4,7 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include "lib/sqlite3.h"
+#include "sqlite3.h"
 
 // Forward declaration
 struct LogEntry;

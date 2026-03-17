@@ -44,7 +44,7 @@ The system implements role-based access control with two user types:
 | Feature | Description |
 |---------|-------------|
 | Cross-Platform | Native support for Windows, Linux, macOS |
-| Zero Dependencies | Built-in SQLite, no external database installation required |
+| Embedded SQLite | SQLite amalgamation fetched via CMake FetchContent |
 | Secure Passwords | SHA-256 encrypted password storage |
 | Security Token | Support for password recovery security tokens |
 | Overdue Alerts | Automatic detection and notification of overdue books |
@@ -65,7 +65,7 @@ The system implements role-based access control with two user types:
 
 | Dependency | Version |
 |------------|---------|
-| CMake | >= 3.10 |
+| CMake | >= 3.11 |
 | C++ Compiler | C++20 support |
 
 Compiler options by platform:
@@ -77,6 +77,8 @@ Check CMake installation:
 ```bash
 cmake --version
 ```
+
+> **Note**: CMake will download the SQLite amalgamation during the configure step.
 
 ---
 
@@ -368,9 +370,6 @@ libraryManagementSystem/
 │   ├── logger.cpp          # Logger implementation
 │   ├── logging_functions.cpp # Log query functions
 │   └── sha256.cpp          # SHA-256 encryption implementation
-├── lib/
-│   ├── sqlite3.c           # SQLite source code
-│   └── sqlite3.h           # SQLite header file
 ├── api-server/             # Node.js Express API server
 │   ├── server.js           # API server implementation
 │   ├── package.json        # Node.js dependencies

@@ -34,7 +34,7 @@
 | 特性 | 说明 |
 |------|------|
 | 跨平台支持 | Windows、Linux、macOS 原生运行 |
-| 零外部依赖 | 内置 SQLite，无需额外安装数据库 |
+| SQLite 集成 | SQLite 通过 CMake FetchContent 获取 |
 | 密码安全 | SHA-256 加密存储用户密码 |
 | 安全口令 | 支持设置找回密码的安全令牌 |
 | 逾期提醒 | 自动检测并提示逾期图书 |
@@ -55,7 +55,7 @@
 
 | 依赖 | 版本要求 |
 |------|----------|
-| CMake | >= 3.10 |
+| CMake | >= 3.11 |
 | C++ 编译器 | 支持 C++20 标准 |
 
 编译器选择：
@@ -67,6 +67,8 @@
 ```bash
 cmake --version
 ```
+
+> **提示**：CMake 在配置阶段会自动下载 SQLite amalgamation。
 
 ---
 
@@ -404,9 +406,6 @@ libraryManagementSystem/
 │   ├── main.cpp            # 程序入口和 UI 逻辑
 │   ├── database.cpp        # 数据库操作实现
 │   └── sha256.cpp          # SHA-256 加密实现
-├── lib/
-│   ├── sqlite3.c           # SQLite 源码
-│   └── sqlite3.h           # SQLite 头文件
 ├── api-server/             # Node.js Express API 服务器
 │   ├── server.js           # API 服务器实现
 │   ├── package.json        # Node.js 依赖
