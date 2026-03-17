@@ -69,3 +69,70 @@ $RECYCLE.BIN/
 *.zip
 *.tar.gz
 *.rar
+
+# =========================
+# Web UI
+# =========================
+webui/node_modules/
+webui/dist/
+webui/.vite/
+webui/.nuxt/
+webui/public/uploads/
+webui/.DS_Store
+web-ui/*.log
+webui/.env.local
+webui/.env.*
+webui/env.d.ts
+
+# =========================
+# Development
+# =========================
+.vscode/
+*.swp
+*.swo
+.DS_Store
+*.tmp
+*.temp
+*~
+
+# =========================
+# Database
+# =========================
+*.db
+*.db-journal
+
+# =========================
+# Environment
+# =========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# =========================
+# IDE
+# =========================
+*.swp
+*.swn
+*~
+
+# =========================
+# Build Artifacts (Additional)
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp.cjs
+.pnp.loader.mjs
+
+# =========================
+# Testing
+# =========================
+coverage/
+.nyc_output/
+.jest/
+jest/
+mocha.opts
+test-report.xml

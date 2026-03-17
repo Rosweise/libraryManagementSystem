@@ -18,7 +18,7 @@
 
 ## 项目简介
 
-**libraryManagementSystem** 是一个基于 SQLite 数据库的本地终端图书管理系统。系统采用 C++20 标准开发，使用 CMake 构建，支持 Windows、Linux 和 macOS 三大主流操作系统。
+**libraryManagementSystem** 是一个基于 SQLite 数据库的本地终端图书管理系统，同时提供Web页面可视化管理。系统采用 C++20 标准开发，使用 CMake 构建，支持 Windows、Linux 和 macOS 三大主流操作系统。
 
 系统通过管理员账号和普通用户（学生）账号实现分级权限管理：
 
@@ -40,6 +40,12 @@
 | 逾期提醒 | 自动检测并提示逾期图书 |
 | 自适应界面 | 根据终端宽度自动调整表格显示 |
 | 多语言支持 | 支持中英文界面切换 |
+| **Web 界面** | 现代化的 Vue 3 WebUI |
+| **RESTful API** | Node.js Express API 服务器用于 Web 集成 |
+| **日志系统** | 全面的日志记录和查询功能 |
+| **增强管理面板** | 全面的图书、用户和借阅管理功能 |
+| **用户管理** | 完整的用户注册、认证和档案管理 |
+| **响应式设计** | 为桌面和移动设备优化 |
 
 ---
 
@@ -155,6 +161,55 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/Windows-x86.cmake
 
 # 编译
 cmake --build .
+```
+
+---
+
+## Web 界面
+
+### 特性
+
+| 特性 | 说明 |
+|------|------|
+| **现代化界面** | 基于 Vue 3 的现代化 Web 界面 |
+| **响应式设计** | 适配桌面和移动设备 |
+| **白色主题** | 清晰简洁的白色主题设计 |
+| **用户友好** | 直观的操作界面和流畅的用户体验 |
+| **实时同步** | 与后端数据库实时同步 |
+| **多角色支持** | 支持管理员和学生用户角色 |
+| **安全认证** | JWT 令牌认证机制 |
+
+### 构建方式
+
+#### 方法一：命令行
+
+```bash
+# 1. 启动 API 服务器
+cd api-server
+npm install
+npm start
+
+# 2. 启动前端（另开一个终端）
+cd webui
+npm install
+npm run dev
+
+# 3. 打开浏览器
+# 访问 http://localhost:3000
+
+默认管理员账号：
+- 用户名：`admin`
+- 密码：`admin`
+```
+
+#### 方法二：启动脚本
+
+```bash
+# 直接运行启动脚本
+./start.sh
+
+# 系统会自动启动 API 服务器和前端开发服务器
+# 访问 http://localhost:3000
 ```
 
 ---
@@ -352,9 +407,22 @@ libraryManagementSystem/
 ├── lib/
 │   ├── sqlite3.c           # SQLite 源码
 │   └── sqlite3.h           # SQLite 头文件
+├── api-server/             # Node.js Express API 服务器
+│   ├── server.js           # API 服务器实现
+│   ├── package.json        # Node.js 依赖
+│   └── README.md           # API 服务器文档
+├── webui/                  # Vue 3 WebUI（更新为白色主题）
+│   ├── src/
+│   │   ├── api/            # API 服务层
+│   │   ├── views/          # Vue 组件和页面
+│   │   ├── router/         # Vue Router 配置
+│   │   ├── store/          # Pinia 状态管理
+│   │   └── plugins/        # Vue 插件（i18n 等）
+│   ├── package.json        # 前端依赖
+│   └── vite.config.ts      # Vite 配置
 ├── Build/                  # 编译输出目录
 └── docs/
-    └── README_zh-CN.md     # 中文文档
+    ├── README_zh-CN.md     # 中文文档
     └── CMake 安装教程.md    # CMake 安装指南
 ```
 
@@ -369,6 +437,13 @@ libraryManagementSystem/
 | **CMake** | 跨平台构建系统 |
 | **SHA-256** | 密码加密算法 |
 | **本地化** | 支持中英文多语言界面 |
+| **Node.js + Express** | Web 集成的 RESTful API 服务器 |
+| **Vue 3 + TypeScript** | 现代响应式前端框架 |
+| **Element Plus** | Vue 3 UI 组件库 |
+| **Vite** | 下一代前端构建工具 |
+| **增强 UI/UX** | 白色主题，改进的可访问性和对比度 |
+| **完整管理面板** | 全面的图书、用户和借阅管理功能 |
+| **改进日志系统** | 全面的系统监控和审计跟踪 |
 
 ---
 

@@ -250,7 +250,24 @@ private:
         englishTexts["full_borrow_table_header_overdue"] = "Overdue";
         englishTexts["yes"] = "Yes";
         englishTexts["no"] = "No";
-        
+
+        // Log management
+        englishTexts["log_management"] = "Log Management";
+        englishTexts["query_logs_by_time"] = "Query Logs by Time";
+        englishTexts["query_logs_by_user"] = "Query Logs by User";
+        englishTexts["query_logs_by_level"] = "Query Logs by Level";
+        englishTexts["query_logs_by_action"] = "Query Logs by Action";
+        englishTexts["view_all_logs"] = "View All Logs";
+        englishTexts["start_time_prompt"] = "Start Time";
+        englishTexts["end_time_prompt"] = "End Time";
+        englishTexts["action_prompt"] = "Action";
+        englishTexts["time"] = "Time";
+        englishTexts["level"] = "Level";
+        englishTexts["action"] = "Action";
+        englishTexts["message"] = "Message";
+        englishTexts["no_logs_found"] = "No logs found";
+        englishTexts["total_logs"] = "Total logs";
+
         // Chinese texts
         chineseTexts["welcome_main_menu"] = "欢迎使用图书管理系统";
         chineseTexts["login_option"] = "1. 登录";
@@ -447,81 +464,22 @@ private:
         chineseTexts["show_next_page_or_exit"] = "按回车键查看下一页，或输入 'q' 退出: ";
         chineseTexts["end_of_list"] = "已到达列表末尾。";
 
-        // Security: login rate limiting
-        englishTexts["account_locked"] = "Account is temporarily locked due to too many failed login attempts. Please try again in ";
-        englishTexts["account_locked_minutes"] = " minute(s).";
-        englishTexts["login_attempts_warning"] = " attempt(s) remaining before temporary lockout.";
-        chineseTexts["account_locked"] = "由于多次登录失败，账户已被临时锁定。请于 ";
-        chineseTexts["account_locked_minutes"] = " 分钟后重试。";
-        chineseTexts["login_attempts_warning"] = " 次尝试后账户将被临时锁定。";
-
-        // Security: password policy
-        englishTexts["password_too_short"] = "Password must be at least 8 characters long.";
-        englishTexts["password_empty"] = "Password cannot be empty.";
-        chineseTexts["password_too_short"] = "密码长度不能少于8个字符。";
-        chineseTexts["password_empty"] = "密码不能为空。";
-
-        // Security: duplicate borrow / borrow limit
-        englishTexts["duplicate_borrow_error"] = "You already have an active borrow for this book.";
-        englishTexts["borrow_limit_exceeded"] = "You have reached the maximum borrow limit (5 books at a time).";
-        chineseTexts["duplicate_borrow_error"] = "您已借阅此书且尚未归还。";
-        chineseTexts["borrow_limit_exceeded"] = "您已达到最大借阅数量限制（每次最多5本）。";
-
-        // Security: forced password change for default admin
-        englishTexts["default_password_warning"] = "!!! SECURITY WARNING: You are using the default password. Please change it immediately. !!!";
-        englishTexts["forced_password_change_title"] = "Mandatory Password Change";
-        englishTexts["forced_password_change_prompt"] = "For security reasons, you must change your password before continuing.";
-        chineseTexts["default_password_warning"] = "!!! 安全警告：您正在使用默认密码，请立即更改！ !!!";
-        chineseTexts["forced_password_change_title"] = "强制修改密码";
-        chineseTexts["forced_password_change_prompt"] = "出于安全考虑，您必须先修改密码才能继续使用。";
-
-        // New admin menu items
-        englishTexts["system_statistics"] = "4. System Statistics";
-        chineseTexts["system_statistics"] = "4. 系统统计";
-        englishTexts["view_audit_log"] = "3. View Audit Log";
-        chineseTexts["view_audit_log"] = "3. 查看操作日志";
-
-        // Audit log display
-        englishTexts["audit_log_title"] = "Recent Audit Log";
-        englishTexts["audit_log_lines_prompt"] = "Number of recent entries to show (default 20): ";
-        englishTexts["no_audit_records"] = "No audit records found.";
-        englishTexts["audit_table_header_id"] = "ID";
-        englishTexts["audit_table_header_time"] = "Time";
-        englishTexts["audit_table_header_user"] = "User";
-        englishTexts["audit_table_header_action"] = "Action";
-        englishTexts["audit_table_header_detail"] = "Detail";
-        chineseTexts["audit_log_title"] = "近期操作日志";
-        chineseTexts["audit_log_lines_prompt"] = "显示最近条数 (默认20): ";
-        chineseTexts["no_audit_records"] = "暂无操作记录。";
-        chineseTexts["audit_table_header_id"] = "ID";
-        chineseTexts["audit_table_header_time"] = "时间";
-        chineseTexts["audit_table_header_user"] = "用户";
-        chineseTexts["audit_table_header_action"] = "操作";
-        chineseTexts["audit_table_header_detail"] = "详情";
-
-        // System statistics display
-        englishTexts["statistics_title"] = "System Statistics";
-        englishTexts["stats_total_book_titles"] = "Total Book Titles:       ";
-        englishTexts["stats_total_copies"] = "Total Copies:            ";
-        englishTexts["stats_available_copies"] = "Available Copies:        ";
-        englishTexts["stats_total_students"] = "Registered Students:     ";
-        englishTexts["stats_active_borrowings"] = "Active Borrowings:       ";
-        englishTexts["stats_overdue_count"] = "Overdue Borrowings:      ";
-        englishTexts["stats_top_borrowed"] = "Most Borrowed Book:      ";
-        englishTexts["stats_borrow_count"] = " (borrowed ";
-        englishTexts["stats_borrow_count_end"] = " time(s))";
-        englishTexts["stats_no_borrows_yet"] = "No borrowings recorded yet.";
-        chineseTexts["statistics_title"] = "系统统计";
-        chineseTexts["stats_total_book_titles"] = "图书种类数:     ";
-        chineseTexts["stats_total_copies"] = "图书总册数:     ";
-        chineseTexts["stats_available_copies"] = "可借册数:       ";
-        chineseTexts["stats_total_students"] = "注册学生数:     ";
-        chineseTexts["stats_active_borrowings"] = "当前借阅数:     ";
-        chineseTexts["stats_overdue_count"] = "逾期未还数:     ";
-        chineseTexts["stats_top_borrowed"] = "借阅最多的书:   ";
-        chineseTexts["stats_borrow_count"] = "（共借出 ";
-        chineseTexts["stats_borrow_count_end"] = " 次）";
-        chineseTexts["stats_no_borrows_yet"] = "暂无借阅记录。";
+        // Log management
+        chineseTexts["log_management"] = "日志管理";
+        chineseTexts["query_logs_by_time"] = "按时间查询日志";
+        chineseTexts["query_logs_by_user"] = "按用户查询日志";
+        chineseTexts["query_logs_by_level"] = "按级别查询日志";
+        chineseTexts["query_logs_by_action"] = "按操作查询日志";
+        chineseTexts["view_all_logs"] = "查看所有日志";
+        chineseTexts["start_time_prompt"] = "开始时间";
+        chineseTexts["end_time_prompt"] = "结束时间";
+        chineseTexts["action_prompt"] = "操作";
+        chineseTexts["time"] = "时间";
+        chineseTexts["level"] = "级别";
+        chineseTexts["action"] = "操作";
+        chineseTexts["message"] = "消息";
+        chineseTexts["no_logs_found"] = "未找到日志";
+        chineseTexts["total_logs"] = "总日志数";
     }
 
     Language currentLanguage = Language::CHINESE;
