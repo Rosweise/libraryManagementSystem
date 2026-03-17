@@ -276,7 +276,7 @@ const changeLanguage = (lang: string) => {
   justify-content: center;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: white;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
@@ -293,7 +293,7 @@ const changeLanguage = (lang: string) => {
 .circle {
   position: absolute;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(102, 126, 234, 0.1); /* Purple-transparent circles to be visible on white */
   backdrop-filter: blur(10px);
   animation: float 6s ease-in-out infinite;
 }
@@ -349,12 +349,12 @@ const changeLanguage = (lang: string) => {
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.15);
+  background: white;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(200, 200, 200, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   padding: 40px;
   width: 100%;
   max-width: 420px;
@@ -370,8 +370,9 @@ const changeLanguage = (lang: string) => {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
   z-index: -1;
+  opacity: 0.3;
 }
 
 .login-header {
@@ -391,23 +392,23 @@ const changeLanguage = (lang: string) => {
   width: 48px;
   height: 48px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  color: #667eea; /* Keeping the purple color for the icon */
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.1);
 }
 
 .logo-text {
   font-size: 24px;
   font-weight: 700;
-  color: white;
+  color: #333;
   margin: 0;
 }
 
 .subtitle {
-  color: rgba(255, 255, 255, 0.8);
+  color: #666;
   font-size: 14px;
   margin: 0;
   font-weight: 400;
@@ -415,7 +416,7 @@ const changeLanguage = (lang: string) => {
 
 .role-tabs {
   display: flex;
-  background: rgba(255, 255, 255, 0.1);
+  background: #f0f0f0;
   border-radius: 12px;
   padding: 4px;
   margin-bottom: 32px;
@@ -427,7 +428,7 @@ const changeLanguage = (lang: string) => {
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.7);
+  color: #666;
   font-weight: 500;
   cursor: pointer;
   display: flex;
@@ -438,12 +439,12 @@ const changeLanguage = (lang: string) => {
 }
 
 .tab-button:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: #e0e0e0;
 }
 
 .tab-button.active {
-  background: rgba(255, 255, 255, 0.25);
-  color: white;
+  background: white;
+  color: #667eea;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -460,7 +461,7 @@ const changeLanguage = (lang: string) => {
 }
 
 .input-group label {
-  color: rgba(255, 255, 255, 0.9);
+  color: #333;
   font-size: 14px;
   font-weight: 500;
   margin: 0;
@@ -475,30 +476,28 @@ const changeLanguage = (lang: string) => {
 .input-field {
   width: 100%;
   padding: 14px 14px 14px 44px;
-  border: none;
+  border: 1px solid #ddd;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: white;
+  background: white;
+  color: #333;
   font-size: 16px;
   transition: all 0.3s ease;
 }
 
 .input-field::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: #aaa;
 }
 
 .input-field:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
 .input-wrapper svg:first-child {
   position: absolute;
   left: 14px;
-  color: rgba(255, 255, 255, 0.7);
+  color: #777;
 }
 
 .password-toggle {
@@ -506,7 +505,7 @@ const changeLanguage = (lang: string) => {
   right: 14px;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: #777;
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -514,8 +513,8 @@ const changeLanguage = (lang: string) => {
 }
 
 .password-toggle:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: #f0f0f0;
+  color: #333;
 }
 
 .login-button {
@@ -523,7 +522,7 @@ const changeLanguage = (lang: string) => {
   padding: 16px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #667eea; /* Keeping purple for the button to maintain visibility */
   color: white;
   font-size: 16px;
   font-weight: 600;
@@ -533,7 +532,7 @@ const changeLanguage = (lang: string) => {
   justify-content: center;
   gap: 8px;
   transition: all 0.3s ease;
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
 }
 
 .login-button:hover:not(:disabled) {
@@ -571,18 +570,18 @@ const changeLanguage = (lang: string) => {
   justify-content: space-between;
   margin-top: 24px;
   padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid #eee;
 }
 
 .footer-link {
-  color: rgba(255, 255, 255, 0.8);
+  color: #667eea;
   text-decoration: none;
   font-size: 14px;
   transition: all 0.3s ease;
 }
 
 .footer-link:hover {
-  color: white;
+  color: #5a6fd8;
   text-decoration: underline;
 }
 

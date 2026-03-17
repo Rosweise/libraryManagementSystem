@@ -158,7 +158,7 @@ const handleCommand = async (command: string) => {
 
 .sidebar {
   background-color: #545c64;
-  color: white;
+  color: white; /* Keeping white text for dark sidebar */
   height: 100vh;
   position: fixed;
   top: 0;
@@ -176,7 +176,7 @@ const handleCommand = async (command: string) => {
 
 .logo h3 {
   margin: 0;
-  color: white;
+  color: white; /* Keeping white text for dark sidebar */
 }
 
 .sidebar-menu:not(.el-menu--collapse) {

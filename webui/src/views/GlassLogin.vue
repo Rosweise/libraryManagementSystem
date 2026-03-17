@@ -1,7 +1,7 @@
 <template>
   <div class="h-screen w-screen overflow-hidden bg-scene">
     <!-- Background gradient -->
-    <div class="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"></div>
+    <div class="absolute inset-0 bg-white"></div>
 
     <!-- Login Screen -->
     <div v-if="!isAuthenticated" class="relative h-full w-full flex items-center justify-center p-4">
@@ -194,10 +194,11 @@ const handleLogin = async () => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
-  color: white;
+  background: white;
+  color: #818cf8;
+  border: 1px solid #818cf8;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.1);
 }
 
 .btn-primary:hover:not(:disabled) {

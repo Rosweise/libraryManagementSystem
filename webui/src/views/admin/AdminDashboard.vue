@@ -335,7 +335,7 @@ const goToBorrowings = () => {
 .modern-dashboard {
   min-height: 100vh;
   padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: white;
   background-attachment: fixed;
 }
 
@@ -346,28 +346,28 @@ const goToBorrowings = () => {
   align-items: center;
   margin-bottom: 2rem;
   padding: 2rem;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid #eee;
 }
 
 .welcome-title {
   font-size: 2rem;
   font-weight: 700;
-  color: white;
+  color: #333;
   margin: 0 0 0.5rem 0;
 }
 
 .welcome-subtitle {
   font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: #666;
   margin: 0;
 }
 
 .date-time {
   text-align: right;
-  color: white;
+  color: #666;
 }
 
 .date {
@@ -421,14 +421,14 @@ const goToBorrowings = () => {
 .stat-value {
   font-size: 2rem;
   font-weight: 700;
-  color: white;
+  color: #333;
   line-height: 1;
   margin-bottom: 0.5rem;
 }
 
 .stat-label {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: #666;
   margin-bottom: 0.5rem;
 }
 
@@ -482,15 +482,15 @@ const goToBorrowings = () => {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: white;
+  color: #333;
 }
 
 .header-icon {
-  color: rgba(255, 255, 255, 0.8);
+  color: #666;
 }
 
 .view-all-btn {
-  color: white !important;
+  color: #667eea !important;
 }
 
 .card-body {
@@ -499,11 +499,10 @@ const goToBorrowings = () => {
 
 /* Glass Card Effect */
 .glass-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
+  background: white;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid #eee;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 /* Borrowings List */
@@ -526,7 +525,7 @@ const goToBorrowings = () => {
 }
 
 .borrowing-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #f8f9ff;
   transform: translateX(5px);
 }
 
@@ -534,7 +533,7 @@ const goToBorrowings = () => {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #667eea;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -550,7 +549,7 @@ const goToBorrowings = () => {
 
 .borrowing-title {
   font-weight: 600;
-  color: white;
+  color: #333;
   margin-bottom: 0.25rem;
   white-space: nowrap;
   overflow: hidden;
@@ -562,11 +561,11 @@ const goToBorrowings = () => {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #666;
 }
 
 .separator {
-  color: rgba(255, 255, 255, 0.3);
+  color: #ccc;
 }
 
 .status-badge {
@@ -600,19 +599,19 @@ const goToBorrowings = () => {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: white;
+  border: 1px solid #eee;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
-  color: white;
+  color: #333;
   text-align: left;
 }
 
 .action-button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #f8f9ff;
   transform: translateX(5px);
-  border-color: var(--action-color);
+  border-color: #667eea;
 }
 
 .action-icon {
@@ -637,11 +636,11 @@ const goToBorrowings = () => {
 
 .action-desc {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #666;
 }
 
 .action-arrow {
-  color: rgba(255, 255, 255, 0.5);
+  color: #999;
   transition: transform 0.3s ease;
 }
 
@@ -661,7 +660,8 @@ const goToBorrowings = () => {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: white;
+  border: 1px solid #eee;
   border-radius: 12px;
 }
 
@@ -684,13 +684,13 @@ const goToBorrowings = () => {
 
 .status-label {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #666;
   margin-bottom: 0.25rem;
 }
 
 .status-value {
   font-weight: 600;
-  color: white;
+  color: #333;
 }
 
 /* Loading & Empty States */
@@ -701,14 +701,14 @@ const goToBorrowings = () => {
   align-items: center;
   justify-content: center;
   padding: 3rem 1rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #666;
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: white;
+  border: 3px solid #eee;
+  border-top-color: #667eea;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;

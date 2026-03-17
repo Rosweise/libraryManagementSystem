@@ -187,32 +187,36 @@ onMounted(() => {
 
 <style scoped>
 .glass-nav {
-  background: rgba(255, 255, 255, 0.5);
+  background: white;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  border-bottom: 1px solid #eee;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.45);
+  background: white;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid #eee;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+  background: white;
+  color: #818cf8;
+  border: 1px solid #818cf8;
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(200, 210, 230, 0.5);
+  background: #f8f9fa;
+  border: 1px solid #ddd;
   transition: all 0.3s ease;
+  color: #555;
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.85);
+  background: #e9ecef;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
@@ -228,7 +232,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #818cf8, #6366f1);
+  background: #818cf8;
   border-radius: 2px;
 }
 
