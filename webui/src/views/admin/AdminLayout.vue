@@ -2,7 +2,7 @@
   <div class="admin-layout">
     <el-container>
       <!-- Sidebar -->
-      <el-aside width="200px" class="sidebar">
+      <el-aside :width="sidebarWidth" class="sidebar">
         <div class="logo">
           <h3>{{ t('library_system') }}</h3>
         </div>
@@ -55,7 +55,7 @@
       </el-aside>
       
       <!-- Main content -->
-      <el-container>
+      <el-container class="main-container">
         <el-header class="header">
           <div class="header-left">
             <el-tooltip :content="t('back_to_home')" placement="bottom">
@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useUserStore } from '@/store/user';
@@ -121,6 +121,9 @@ const router = useRouter();
 const userStore = useUserStore();
 
 const isCollapse = ref(false);
+const sidebarWidth = computed(() => {
+  return isCollapse.value ? '64px' : '220px';
+});
 
 const toggleCollapse = () => {
   isCollapse.value = !isCollapse.value;
@@ -163,16 +166,20 @@ const handleCommand = async (command: string) => {
 <style scoped>
 .admin-layout {
   height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.el-container {
+  height: 100%;
 }
 
 .sidebar {
-  background-color: #545c64;
-  color: white; /* Keeping white text for dark sidebar */
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+  color: #fff;
   height: 100vh;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 100;
+  overflow-x: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .logo {
@@ -180,26 +187,77 @@ const handleCommand = async (command: string) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid #434a50;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
 }
 
 .logo h3 {
   margin: 0;
-  color: white; /* Keeping white text for dark sidebar */
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-menu {
+  border-right: none;
+  background: transparent;
 }
 
 .sidebar-menu:not(.el-menu--collapse) {
-  width: 200px;
+  width: 220px;
+}
+
+.sidebar-menu.el-menu--collapse {
+  width: 64px;
+}
+
+.main-container {
+  height: 100%;
+  overflow: hidden;
+}
+
+:deep(.sidebar-menu .el-menu-item),
+:deep(.sidebar-menu .el-sub-menu__title) {
+  color: #cbd5e1;
+  border-radius: 8px;
+  margin: 6px 8px;
+  height: 44px;
+  line-height: 44px;
+  transition: all 0.2s ease;
+}
+
+:deep(.sidebar-menu .el-sub-menu .el-menu-item) {
+  margin-left: 16px;
+}
+
+:deep(.sidebar-menu .el-menu-item:hover),
+:deep(.sidebar-menu .el-sub-menu__title:hover) {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+:deep(.sidebar-menu .el-menu-item.is-active) {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.3) 0%, rgba(99, 102, 241, 0.1) 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+}
+
+:deep(.sidebar-menu .el-icon) {
+  font-size: 18px;
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: white;
-  box-shadow: 0 1px 4px rgba(0,21,41,.08);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.06);
   padding: 0 20px;
   height: 60px !important;
+  flex-shrink: 0;
 }
 
 .header-left {
@@ -209,10 +267,28 @@ const handleCommand = async (command: string) => {
 
 .collapse-btn {
   margin-right: 20px;
+  border-radius: 8px;
+  border: none;
+  background-color: #f3f4f6;
+  transition: all 0.2s ease;
+}
+
+.collapse-btn:hover {
+  background-color: #e5e7eb;
+  transform: scale(1.05);
 }
 
 .back-btn {
   margin-right: 10px;
+  border-radius: 8px;
+  border: none;
+  background-color: #f3f4f6;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  background-color: #e5e7eb;
+  transform: translateX(-2px);
 }
 
 .header-right {
@@ -224,15 +300,48 @@ const handleCommand = async (command: string) => {
   display: flex;
   align-items: center;
   cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.user-info:hover {
+  background-color: #f3f4f6;
 }
 
 .avatar {
   margin-right: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+}
+
+.username {
+  margin-right: 5px;
+  font-weight: 500;
+  color: #334155;
 }
 
 .main-content {
-  margin-top: 20px;
-  background-color: #f0f2f5;
-  min-height: calc(100vh - 80px);
+  background-color: #f8fafc;
+  padding: 24px;
+  overflow-y: auto;
+  height: calc(100vh - 60px);
+}
+
+.main-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.main-content::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 </style>

@@ -286,33 +286,182 @@ const viewBookDetails = (book: Book) => {
 
 <style scoped>
 .search-books {
-  padding: 20px;
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.search-books h2 {
+  margin: 0 0 24px 0;
+  font-size: 26px;
+  font-weight: 600;
+  color: #1f2937;
+  letter-spacing: -0.025em;
 }
 
 .search-card {
   margin-bottom: 20px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.search-card :deep(.el-card__header) {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 20px;
 }
 
 .search-form {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .search-form .el-form-item {
   margin-right: 20px;
-  margin-bottom: 0;
+  margin-bottom: 10px;
+}
+
+.search-form .el-form-item:last-child {
+  margin-right: 0;
+}
+
+.search-form :deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
 }
 
 .sort-select {
-  width: 150px;
+  width: 180px;
+}
+
+.search-form :deep(.el-input__wrapper) {
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.search-form :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.search-form :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.search-form :deep(.el-button--primary) {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 10px 24px;
+  transition: all 0.2s ease;
+}
+
+.search-form :deep(.el-button--primary:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.search-form :deep(.el-button) {
+  border-radius: 8px;
+  font-weight: 500;
+  padding: 10px 20px;
+  transition: all 0.2s ease;
+}
+
+.search-form :deep(.el-button:hover) {
+  transform: translateY(-1px);
 }
 
 .books-table {
   margin-bottom: 20px;
+  background-color: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.books-table :deep(.el-table__header-wrapper) {
+  background-color: #f9fafb;
+}
+
+.books-table :deep(.el-table th) {
+  background-color: #f9fafb;
+  color: #374151;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 14px 0;
+}
+
+.books-table :deep(.el-table td) {
+  padding: 14px 0;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.books-table :deep(.el-table__row:hover) {
+  background-color: #f9fafb;
+}
+
+.books-table :deep(.el-button) {
+  margin-right: 6px;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.books-table :deep(.el-button:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.books-table :deep(.el-button:last-child) {
+  margin-right: 0;
+}
+
+.books-table :deep(.el-tag) {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 12px;
+  border: none;
 }
 
 .pagination {
   text-align: right;
+  margin-top: 20px;
+  background-color: #fff;
+  padding: 15px 0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.pagination :deep(.el-pagination button) {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.pagination :deep(.el-pagination .el-pager li) {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.pagination :deep(.el-pagination .el-pager li:hover) {
+  transform: translateY(-1px);
+}
+
+.pagination :deep(.el-pagination .el-pager li.is-active) {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  border: none;
 }
 
 .dialog-footer {
@@ -322,6 +471,35 @@ const viewBookDetails = (book: Book) => {
 }
 
 .book-details p {
-  margin: 5px 0;
+  margin: 8px 0;
+  line-height: 1.6;
+  color: #4b5563;
+}
+
+.book-details strong {
+  color: #1f2937;
+}
+
+/* Responsive design */
+@media (max-width: 992px) {
+  .books-table :deep(.el-table) {
+    font-size: 13px;
+  }
+  
+  .books-table :deep(.el-button) {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-books h2 {
+    font-size: 22px;
+  }
+  
+  .search-form .el-form-item {
+    margin-right: 0;
+    width: 100%;
+  }
 }
 </style>

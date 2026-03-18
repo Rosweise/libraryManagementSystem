@@ -1236,6 +1236,5 @@ bool handleForcedPasswordChange(const DatabaseManager &db, User &currentUser) {
         return true;
     }
     std::cout << _("password_change_failed") << "\n";
-    pause();
     return false;
 }

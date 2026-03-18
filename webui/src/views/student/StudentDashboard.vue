@@ -14,45 +14,22 @@
     </el-alert>
     
     <el-row :gutter="20" class="dashboard-cards">
-      <el-col :span="8">
-        <el-card class="dashboard-card">
-          <div class="card-content">
-            <div class="card-icon">
-              <el-icon><Reading /></el-icon>
-            </div>
-            <div class="card-info">
-              <h3>{{ stats.currentBorrowings }}</h3>
-              <p>{{ t('current_borrowings') }}</p>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="8">
-        <el-card class="dashboard-card">
-          <div class="card-content">
-            <div class="card-icon">
-              <el-icon><Clock /></el-icon>
-            </div>
-            <div class="card-info">
-              <h3>{{ stats.pendingReturns }}</h3>
-              <p>{{ t('pending_returns') }}</p>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="8">
-        <el-card class="dashboard-card">
-          <div class="card-content">
-            <div class="card-icon">
-              <el-icon><DocumentChecked /></el-icon>
-            </div>
-            <div class="card-info">
-              <h3>{{ stats.history }}</h3>
-              <p>{{ t('borrow_history') }}</p>
-            </div>
-          </div>
+      <el-col :span="24">
+        <el-card class="dashboard-stats-list">
+          <ul class="stats-list">
+            <li class="stats-item">
+              <span class="stats-label">{{ t('current_borrowings') }}</span>
+              <span class="stats-value">{{ stats.currentBorrowings }}</span>
+            </li>
+            <li class="stats-item">
+              <span class="stats-label">{{ t('pending_returns') }}</span>
+              <span class="stats-value">{{ stats.pendingReturns }}</span>
+            </li>
+            <li class="stats-item">
+              <span class="stats-label">{{ t('borrow_history') }}</span>
+              <span class="stats-value">{{ stats.history }}</span>
+            </li>
+          </ul>
         </el-card>
       </el-col>
     </el-row>
@@ -140,8 +117,6 @@ import { BorrowRecord } from '@/types';
 // Icons
 import { 
   Reading, 
-  Clock, 
-  DocumentChecked, 
   Search, 
   Setting 
 } from '@element-plus/icons-vue';
@@ -278,73 +253,164 @@ const goToAccount = () => {
 
 <style scoped>
 .student-dashboard {
-  padding: 20px;
+  min-height: 100%;
+  padding: 0;
+}
+
+.student-dashboard h2 {
+  margin: 0 0 1.5rem 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  letter-spacing: -0.01em;
 }
 
 .overdue-alert {
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
+  border-radius: 14px;
 }
 
 .dashboard-cards {
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
 }
 
-.dashboard-card {
-  text-align: center;
-  cursor: pointer;
-  transition: transform 0.3s ease;
+.dashboard-stats-list {
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
 }
 
-.dashboard-card:hover {
-  transform: translateY(-5px);
+:deep(.dashboard-stats-list .el-card__body) {
+  padding: 0;
 }
 
-.card-content {
+.stats-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.stats-item {
   display: flex;
   align-items: center;
-  justify-content: space-around;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.card-icon {
-  font-size: 24px;
-  color: #67c23a;
+.stats-item:last-child {
+  border-bottom: none;
 }
 
-.card-info h3 {
-  margin: 0 0 5px 0;
-  font-size: 24px;
-  font-weight: bold;
+.stats-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #334155;
+  line-height: 1.35;
 }
 
-.card-info p {
-  margin: 0;
-  color: #909399;
+.stats-value {
+  margin-left: 12px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .dashboard-content {
-  margin-top: 20px;
+  margin-top: 1.5rem;
 }
 
 .recent-borrowings {
   height: 100%;
+  min-height: 400px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
 }
 
 .quick-actions {
   height: 100%;
+  min-height: 400px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+}
+
+:deep(.recent-borrowings .el-card__header),
+:deep(.quick-actions .el-card__header) {
+  background-color: transparent;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1.25rem 1.5rem;
+}
+
+:deep(.recent-borrowings .el-card__body),
+:deep(.quick-actions .el-card__body) {
+  padding: 1.25rem 1.5rem;
 }
 
 .actions-grid {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 0.9rem;
 }
 
 .action-btn {
   width: 100%;
-  justify-content: flex-start;
+  justify-content: space-between;
+  height: 48px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #334155;
+  transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+  transform: translateX(4px);
+  border-color: #6366f1;
+  background: #f8faff;
 }
 
 .card-header {
-  font-weight: bold;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+:deep(.recent-borrowings .el-table th) {
+  background-color: #f8fafc;
+}
+
+@media (max-width: 992px) {
+  .stats-value {
+    font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .student-dashboard h2 {
+    font-size: 1.5rem;
+  }
+
+  .dashboard-cards {
+    margin-bottom: 1rem;
+  }
+
+  .stats-item {
+    padding: 14px 16px;
+  }
+
+  .stats-label {
+    font-size: 0.88rem;
+  }
+
+  .stats-value {
+    font-size: 1.4rem;
+  }
 }
 </style>
