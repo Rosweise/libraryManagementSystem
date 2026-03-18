@@ -167,24 +167,23 @@ const overdueBooks = ref<BorrowRecord[]>([]);
 
 const loadDashboardData = async () => {
   if (!userStore.user?.id) return;
-  
+
   try {
-    // Fetch user's borrowed books
-    const borrowResponse = await apiService.getBorrowedBooks(userStore.user.id);
-    if (borrowResponse.success && borrowResponse.data) {
-      recentBorrowings.value = borrowResponse.data;
-      stats.value.currentBorrowings = borrowResponse.data.length;
-      stats.value.pendingReturns = borrowResponse.data.filter(b => !b.returnDate).length;
+    // Fetch all borrowings (current + history)
+    const allBorrowResponse = await apiService.getAllBorrowings(userStore.user.id);
+    if (allBorrowResponse.success && allBorrowResponse.data) {
+      const allBorrowings = allBorrowResponse.data;
+      recentBorrowings.value = allBorrowings.slice(0, 5); // Show only recent 5
+      stats.value.currentBorrowings = allBorrowings.filter(b => !b.returnDate).length;
+      stats.value.pendingReturns = allBorrowings.filter(b => !b.returnDate).length;
+      stats.value.history = allBorrowings.filter(b => b.returnDate).length;
     }
-    
+
     // Fetch overdue books
     const overdueResponse = await apiService.getOverdueBooks(userStore.user.id);
     if (overdueResponse.success && overdueResponse.data) {
       overdueBooks.value = overdueResponse.data;
     }
-    
-    // Mock history count
-    stats.value.history = 42;
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
     ElMessage.error(t('fetch_data_error'));

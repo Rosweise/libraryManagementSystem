@@ -173,6 +173,15 @@ class ApiService {
     }
   }
 
+  async getAllBorrowings(userId: string): Promise<ApiResponse<BorrowRecord[]>> {
+    try {
+      const response: AxiosResponse<BorrowRecord[]> = await this.api.get(`/borrowings/user/${userId}/all`);
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      return { success: false, error: error.response?.data?.message || 'Failed to fetch all borrowings' };
+    }
+  }
+
   async getOverdueBooks(userId: string): Promise<ApiResponse<BorrowRecord[]>> {
     try {
       const response: AxiosResponse<BorrowRecord[]> = await this.api.get(`/borrowings/user/${userId}/overdue`);

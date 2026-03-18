@@ -246,15 +246,45 @@ app.get('/api/users', authenticateToken, (req, res) => {
 app.post('/api/auth/register', (req, res) => {
   const { id, username, name, college, className, password } = req.body;
 
-  const sql = 'INSERT INTO Users (id, username, name, college, className, role, password) VALUES (?, ?, ?, ?, ?, ?, ?)';
-  db.run(sql, [id, username, name, college, className, 'STUDENT', password], function(err) {
+  // Validate required fields
+  if (!id || !username || !name || !college || !className || !password) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+
+  // Check if username already exists
+  db.get('SELECT username FROM Users WHERE username = ?', [username], (err, existingUser) => {
     if (err) {
-      logAction('ERROR', `Registration error: ${err.message}`, username, 'register');
+      logAction('ERROR', `Registration check error: ${err.message}`, username, 'register');
       return res.status(500).json({ message: 'Registration failed' });
     }
 
-    logAction('INFO', 'New user registered', username, 'register');
-    res.json({ id, username, name, role: 'STUDENT' });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Username already exists' });
+    }
+
+    // Check if user ID already exists
+    db.get('SELECT id FROM Users WHERE id = ?', [id], (err, existingId) => {
+      if (err) {
+        logAction('ERROR', `Registration check error: ${err.message}`, username, 'register');
+        return res.status(500).json({ message: 'Registration failed' });
+      }
+
+      if (existingId) {
+        return res.status(400).json({ message: 'Student ID already exists' });
+      }
+
+      // Insert new user
+      const sql = 'INSERT INTO Users (id, username, name, college, className, role, password) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      db.run(sql, [id, username, name, college, className, 'STUDENT', password], function(err) {
+        if (err) {
+          logAction('ERROR', `Registration error: ${err.message}`, username, 'register');
+          return res.status(500).json({ message: 'Registration failed' });
+        }
+
+        logAction('INFO', 'New user registered', username, 'register');
+        res.json({ id, username, name, role: 'STUDENT' });
+      });
+    });
   });
 });
 
@@ -463,7 +493,7 @@ app.get('/api/borrowings', authenticateToken, (req, res) => {
 
 // ============ Borrowing Management Endpoints ============
 
-// Get borrowed books by user
+// Get borrowed books by user (current only, not returned)
 app.get('/api/borrowings/user/:userId', authenticateToken, (req, res) => {
   const { userId } = req.params;
 
@@ -473,6 +503,27 @@ app.get('/api/borrowings/user/:userId', authenticateToken, (req, res) => {
     FROM BorrowRecords br
     JOIN Books b ON br.bookIsbn = b.isbn
     WHERE br.userId = ? AND br.returnDate IS NULL
+  `;
+
+  db.all(sql, [userId], (err, records) => {
+    if (err) {
+      return res.status(500).json({ message: 'Failed to fetch borrow records' });
+    }
+    res.json(records);
+  });
+});
+
+// Get all borrowings by user (including returned - for history)
+app.get('/api/borrowings/user/:userId/all', authenticateToken, (req, res) => {
+  const { userId } = req.params;
+
+  const sql = `
+    SELECT br.recordId, br.userId, br.bookIsbn, b.title as bookTitle,
+           br.borrowDate, br.dueDate, br.returnDate
+    FROM BorrowRecords br
+    JOIN Books b ON br.bookIsbn = b.isbn
+    WHERE br.userId = ?
+    ORDER BY br.borrowDate DESC
   `;
 
   db.all(sql, [userId], (err, records) => {

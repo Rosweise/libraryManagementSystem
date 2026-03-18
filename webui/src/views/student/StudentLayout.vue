@@ -150,14 +150,14 @@ const handleCommand = async (command: string) => {
           type: 'warning'
         }
       );
-      
+
       userStore.logout();
       ElMessage.success(t('logout_success'));
       router.push('/login');
     } catch (error) {
       // User cancelled logout
     }
-  } else if (command === 'profile') {
+  } else if (command === 'profile' || command === 'settings') {
     router.push('/student/account');
   }
   // Add other command handlers as needed

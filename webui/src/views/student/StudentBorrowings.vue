@@ -115,8 +115,8 @@ onMounted(() => {
 const fetchBorrowings = async (userId: string) => {
   loading.value = true;
   try {
-    const response = await apiService.getBorrowedBooks(userId);
-    
+    const response = await apiService.getAllBorrowings(userId);
+
     if (response.success && response.data) {
       // Separate current borrowings and history
       currentBorrowings.value = response.data.filter(record => !record.returnDate);
