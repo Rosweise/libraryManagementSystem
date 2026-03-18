@@ -347,29 +347,94 @@ const setRecoveryToken = async () => {
 
 <style scoped>
 .account-management {
-  padding: 20px;
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .account-header {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 24px;
 }
 
 .account-header h2 {
   margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  color: #1f2937;
+  letter-spacing: -0.025em;
 }
 
 .back-btn {
   padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  transform: translateX(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .account-tabs {
   margin-top: 20px;
 }
 
+.account-tabs :deep(.el-tabs__header) {
+  background-color: #fff;
+  padding: 0 20px;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.account-tabs :deep(.el-tabs__item) {
+  font-size: 15px;
+  font-weight: 500;
+  color: #6b7280;
+  padding: 0 24px;
+  height: 48px;
+  line-height: 48px;
+  transition: all 0.2s ease;
+}
+
+.account-tabs :deep(.el-tabs__item:hover) {
+  color: #10b981;
+}
+
+.account-tabs :deep(.el-tabs__item.is-active) {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.account-tabs :deep(.el-tabs__active-bar) {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+}
+
+.account-tabs :deep(.el-tabs__content) {
+  padding: 24px;
+  background-color: #f9fafb;
+  border-radius: 0 0 12px 12px;
+}
+
 .profile-card, .password-card, .token-card {
   max-width: 800px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  border: none;
+}
+
+.profile-card :deep(.el-card__header),
+.password-card :deep(.el-card__header),
+.token-card :deep(.el-card__header) {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 20px;
 }
 
 .card-header {
@@ -379,6 +444,48 @@ const setRecoveryToken = async () => {
 }
 
 .card-header span {
-  font-weight: bold;
+  font-weight: 600;
+  font-size: 17px;
+  color: #1f2937;
+  letter-spacing: -0.01em;
+}
+
+.profile-card :deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
+}
+
+.profile-card :deep(.el-input__wrapper) {
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.profile-card :deep(.el-tag) {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 12px;
+  border: none;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .account-management {
+    padding: 10px;
+  }
+  
+  .account-header h2 {
+    font-size: 22px;
+  }
+  
+  .profile-card, .password-card, .token-card {
+    max-width: 100%;
+  }
+  
+  .account-tabs :deep(.el-tabs__item) {
+    padding: 0 16px;
+    font-size: 14px;
+  }
 }
 </style>

@@ -1,6 +1,10 @@
 /* Global styles for the library management system */
 
 /* Base styles */
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -8,89 +12,18 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #333;
+  background-color: #f0f2f5;
 }
 
-/* Layout adjustments */
+html, body, #app {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Reset Element Plus defaults for better layout */
 .el-container {
   height: 100%;
-}
-
-.el-aside {
-  background-color: #545c64;
-  color: #fff;
-  height: 100vh;
-  position: fixed;
-  top: 0;
-  left: 0;
-  overflow-x: hidden;
-  box-shadow: 2px 0 6px rgba(0,21,41,.35);
-  z-index: 100;
-}
-
-.el-header {
-  background-color: #fff;
-  color: #333;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 1px 4px rgba(0,21,41,.08);
-  padding: 0 20px;
-  height: 60px !important;
-  position: sticky;
-  top: 0;
-  z-index: 99;
-}
-
-.el-main {
-  background-color: #f0f2f5;
-  padding: 20px;
-  margin-top: 20px;
-  margin-left: 200px; /* Account for sidebar width */
-  min-height: calc(100vh - 80px);
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .el-aside {
-    width: 64px !important;
-  }
-  
-  .el-main {
-    margin-left: 64px;
-  }
-  
-  .sidebar-menu .el-sub-menu .el-menu {
-    position: absolute;
-    left: 64px;
-    min-width: 200px;
-  }
-  
-  .header-section {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .header-section .el-button {
-    margin-top: 10px;
-    margin-left: 0;
-  }
-  
-  .search-form {
-    flex-direction: column;
-  }
-  
-  .search-form .el-form-item {
-    margin-right: 0;
-    width: 100%;
-  }
-  
-  .el-table {
-    font-size: 12px;
-  }
-  
-  .el-table th, .el-table td {
-    padding: 4px 0;
-  }
 }
 
 /* Card styles */
@@ -98,6 +31,7 @@ body {
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
+  background-color: #fff;
 }
 
 .el-card__header {
@@ -111,12 +45,17 @@ body {
 .el-table {
   border-radius: 8px;
   overflow: hidden;
+  background-color: #fff;
 }
 
 .el-table th {
   background-color: #f5f7fa;
   color: #606266;
   font-weight: 500;
+}
+
+.el-table td {
+  padding: 12px 0;
 }
 
 /* Button styles */
@@ -159,12 +98,39 @@ body {
 /* Alert styles */
 .el-alert {
   border-radius: 8px;
-  margin-bottom: 20px;
 }
 
 /* Badge styles */
 .el-badge__content {
   border-radius: 10px;
+}
+
+/* Tabs styles */
+.el-tabs {
+  background-color: #fff;
+}
+
+.el-tabs__header {
+  background-color: #fff;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+/* Menu styles */
+.el-menu {
+  border-right: none;
+}
+
+.el-menu-item {
+  border-radius: 4px;
+  margin: 4px 8px;
+}
+
+.el-menu-item:hover {
+  background-color: #434a50;
+}
+
+.el-menu-item.is-active {
+  background-color: #409eff;
 }
 
 /* Custom utility classes */
@@ -238,5 +204,25 @@ body {
 @media (max-width: 768px) {
   .dashboard-cards {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .el-table {
+    font-size: 12px;
+  }
+
+  .el-table th, .el-table td {
+    padding: 8px 4px;
+  }
+
+  .search-form {
+    flex-direction: column;
+  }
+
+  .search-form .el-form-item {
+    margin-right: 0;
+    width: 100%;
   }
 }
