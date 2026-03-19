@@ -171,6 +171,13 @@ public:
     // 系统统计
     [[nodiscard]] SystemStats getSystemStats() const;
 
+    // 登录尝试管理（持久化到数据库）
+    [[nodiscard]] int getFailedLoginCount(const std::string &username) const;
+    void recordFailedLogin(const std::string &username) const;
+    void resetFailedLoginCount(const std::string &username) const;
+    [[nodiscard]] bool isAccountLocked(const std::string &username) const;
+    [[nodiscard]] int getLockoutRemainingMinutes(const std::string &username) const;
+
 private:
     sqlite3 *db_ = nullptr;
     std::string db_path_;

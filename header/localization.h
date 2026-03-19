@@ -480,6 +480,16 @@ private:
         chineseTexts["message"] = "消息";
         chineseTexts["no_logs_found"] = "未找到日志";
         chineseTexts["total_logs"] = "总日志数";
+
+        // Security features - account lockout and forced password change
+        englishTexts["account_locked"] = "Account is locked due to too many failed login attempts. Try again in ";
+        englishTexts["account_locked_minutes"] = " minutes.";
+        englishTexts["forced_password_change_required"] = "Forced Password Change Required";
+        englishTexts["password_too_short"] = "Password must be at least 8 characters long.";
+        chineseTexts["account_locked"] = "由于多次登录失败，账户已被锁定。请在 ";
+        chineseTexts["account_locked_minutes"] = " 分钟后重试。";
+        chineseTexts["forced_password_change_required"] = "需要强制修改密码";
+        chineseTexts["password_too_short"] = "密码必须至少为 8 个字符。";
     }
 
     Language currentLanguage = Language::CHINESE;

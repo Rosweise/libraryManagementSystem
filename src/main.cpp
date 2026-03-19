@@ -24,8 +24,8 @@
 #include <vector>
 #include <limits>
 #include <iomanip>
-#include <map>
-#include <chrono>
+// #include <map>  // Removed: no longer needed
+// #include <chrono>  // Removed: no longer needed
 #include "../header/database.h"
 #include "../header/utils.h"
 #include "../header/localization.h"
@@ -55,6 +55,7 @@ void handleAdminChangePassword(const DatabaseManager &db, const User &adminUser)
 void handleStudentChangePassword(const DatabaseManager &db, const User &currentUser);  // 普通用户修改密码
 void handleSetRecoveryToken(const DatabaseManager &db, User &currentUser);  // 安全口令
 void handleViewMyInfo(const User &currentUser);  // 查看自己的信息
+bool handleForcedPasswordChange(const DatabaseManager &db, User &currentUser);  // 强制修改密码
 
 
 // Log management functions
@@ -71,13 +72,11 @@ void displayStudents(const std::vector<User> &students);  // 显示普通永固/
 void displayFullBorrowRecords(const std::vector<FullBorrowRecord> &records);  // 显示全部借阅记录
 
 // ------ 安全：登录频率限制 ------
-struct LoginAttemptInfo {
-    int failedCount = 0;
-    std::chrono::steady_clock::time_point lockedUntil = std::chrono::steady_clock::now();
-};
-static std::map<std::string, LoginAttemptInfo> g_loginAttempts;
-constexpr int MAX_LOGIN_ATTEMPTS = 5;        // 最多5次连续失败
-constexpr int LOCKOUT_SECONDS = 300;         // 锁定5分钟
+// Note: Login attempts are now persisted in the database (LoginAttempts table)
+// Constants for login rate limiting
+constexpr int MAX_LOGIN_ATTEMPTS = 5;        // 最多 5 次连续失败
+constexpr int LOCKOUT_MINUTES = 5;           // 锁定 5 分钟
+
 
 // 验证密码是否满足最低安全要求（至少8个字符）
 static bool isValidPassword(const std::string &pwd) {
@@ -302,19 +301,18 @@ void showStudentMenu(const DatabaseManager &db, User &currentUser) {
 
 void login(const DatabaseManager &db) {
     std::string username, password;
-    std::cout << "--- " << _("admin_menu_title") << " ---\n";  // Using admin menu title as generic login title
+    std::cout << "--- " << _("admin_menu_title") << "---\n";  // Using admin menu title as generic login title
     std::cout << _("username_prompt");
     std::getline(std::cin, username);
 
-    // Check if this account is currently locked out
-    auto &info = g_loginAttempts[username];
-    auto now = std::chrono::steady_clock::now();
-    if (info.failedCount >= MAX_LOGIN_ATTEMPTS && now < info.lockedUntil) {
-        auto remaining = std::chrono::duration_cast<std::chrono::seconds>(info.lockedUntil - now).count();
-        int remainingMinutes = static_cast<int>((remaining + 59) / 60); // ceil: round up to next whole minute
-        std::cout << _("account_locked") << remainingMinutes << _("account_locked_minutes") << "\n";
-        pause();
-        return;
+    // Check if account is locked (database-backed)
+    if (db.isAccountLocked(username)) {
+        int remainingMinutes = db.getLockoutRemainingMinutes(username);
+        if (remainingMinutes > 0) {
+            std::cout << _("account_locked") << remainingMinutes << _("account_locked_minutes") << "\n";
+            pause();
+            return;
+        }
     }
 
     std::cout << _("password_prompt");
@@ -322,16 +320,36 @@ void login(const DatabaseManager &db) {
 
     User user = db.authenticateUser(username, password);
 
-
     if (user.role == "ADMIN") {
+        // Check if forced password change is required for default admin
+        if (user.passwordNeedsChange) {
+            std::cout << "\n=== " << _("forced_password_change_required") << " ===\n";
+            while (user.passwordNeedsChange) {
+                if (handleForcedPasswordChange(db, user)) {
+                    break;
+                }
+            }
+        }
         Logger::getInstance().info("Admin user logged in successfully", username, "login");
+        db.resetFailedLoginCount(username);  // Reset failed attempts on successful login
         showAdminMenu(db, user);
     } else if (user.role == "STUDENT") {
+        // Check if forced password change is required
+        if (user.passwordNeedsChange) {
+            std::cout << "\n=== " << _("forced_password_change_required") << " ===\n";
+            while (user.passwordNeedsChange) {
+                if (handleForcedPasswordChange(db, user)) {
+                    break;
+                }
+            }
+        }
         Logger::getInstance().info("Student user logged in successfully", username, "login");
+        db.resetFailedLoginCount(username);  // Reset failed attempts on successful login
         showStudentMenu(db, user);
     } else {
         Logger::getInstance().warn("Failed login attempt", username, "login");
         std::cout << _("login_failed") << "\n";
+        db.recordFailedLogin(username);  // Record failed attempt in database
         pause();
     }
 }

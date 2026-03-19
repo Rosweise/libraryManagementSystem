@@ -114,6 +114,14 @@ bool DatabaseManager::initialize() {
         );
     )";
 
+    const auto create_login_attempts_table = R"(
+        CREATE TABLE IF NOT EXISTS LoginAttempts (
+            username TEXT PRIMARY KEY,
+            failed_count INTEGER NOT NULL DEFAULT 0,
+            locked_until TEXT
+        );
+    )";
+
     // Define indexes to improve query performance
     const auto create_users_username_index = R"(CREATE INDEX IF NOT EXISTS idx_users_username ON Users(username);)";
     const auto create_books_title_index = R"(CREATE INDEX IF NOT EXISTS idx_books_title ON Books(title);)";
@@ -129,7 +137,8 @@ bool DatabaseManager::initialize() {
     if (sqlite3_exec(db_, create_users_table, nullptr, nullptr, &err_msg) != SQLITE_OK ||
         sqlite3_exec(db_, create_books_table, nullptr, nullptr, &err_msg) != SQLITE_OK ||
         sqlite3_exec(db_, create_records_table, nullptr, nullptr, &err_msg) != SQLITE_OK ||
-        sqlite3_exec(db_, create_audit_table, nullptr, nullptr, &err_msg) != SQLITE_OK) {
+        sqlite3_exec(db_, create_audit_table, nullptr, nullptr, &err_msg) != SQLITE_OK ||
+        sqlite3_exec(db_, create_login_attempts_table, nullptr, nullptr, &err_msg) != SQLITE_OK) {
         std::cerr << "SQL error creating tables: " << err_msg << std::endl;
         sqlite3_free(err_msg);
         return false;
@@ -1072,4 +1081,97 @@ SystemStats DatabaseManager::getSystemStats() const {
     }
 
     return stats;
+}
+
+// Login attempt management methods (persisted to database)
+int DatabaseManager::getFailedLoginCount(const std::string &username) const {
+    const std::string sql = "SELECT failed_count FROM LoginAttempts WHERE username = ?;";
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return 0;
+    
+    sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+    int count = 0;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        count = sqlite3_column_int(stmt, 0);
+    }
+    sqlite3_finalize(stmt);
+    return count;
+}
+
+void DatabaseManager::recordFailedLogin(const std::string &username) const {
+    // Insert or update failed count and lockout time
+    const std::string sql = R"(
+        INSERT INTO LoginAttempts (username, failed_count, locked_until) 
+        VALUES (?, 1, datetime('now', '+5 minutes'))
+        ON CONFLICT(username) DO UPDATE SET 
+            failed_count = failed_count + 1,
+            locked_until = CASE 
+                WHEN failed_count + 1 >= 5 THEN datetime('now', '+5 minutes')
+                ELSE locked_until 
+            END
+    ;)";
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return;
+    
+    sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+}
+
+void DatabaseManager::resetFailedLoginCount(const std::string &username) const {
+    const std::string sql = "DELETE FROM LoginAttempts WHERE username = ?;";
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return;
+    
+    sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+}
+
+bool DatabaseManager::isAccountLocked(const std::string &username) const {
+    const std::string sql = "SELECT locked_until FROM LoginAttempts WHERE username = ? AND locked_until IS NOT NULL;";
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return false;
+    
+    sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+    bool locked = false;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        const char *lockedUntil = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
+        if (lockedUntil) {
+            // Compare with current time using SQLite's datetime
+            sqlite3_stmt *check_stmt;
+            const std::string check_sql = "SELECT ? > datetime('now');";
+            if (sqlite3_prepare_v2(db_, check_sql.c_str(), -1, &check_stmt, nullptr) == SQLITE_OK) {
+                sqlite3_bind_text(check_stmt, 1, lockedUntil, -1, SQLITE_STATIC);
+                if (sqlite3_step(check_stmt) == SQLITE_ROW) {
+                    locked = sqlite3_column_int(check_stmt, 0) != 0;
+                }
+                sqlite3_finalize(check_stmt);
+            }
+        }
+    }
+    sqlite3_finalize(stmt);
+    return locked;
+}
+
+int DatabaseManager::getLockoutRemainingMinutes(const std::string &username) const {
+    const std::string sql = R"(
+        SELECT CASE 
+            WHEN locked_until > datetime('now') THEN 
+                CAST((julianday(locked_until) - julianday('now')) * 24 * 60 AS INTEGER)
+            ELSE 0 
+        END as remaining_minutes
+        FROM LoginAttempts 
+        WHERE username = ?;
+    )";
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return 0;
+    
+    sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+    int minutes = 0;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        minutes = sqlite3_column_int(stmt, 0);
+    }
+    sqlite3_finalize(stmt);
+    return minutes > 0 ? minutes : 0;
 }
