@@ -251,6 +251,16 @@ private:
         englishTexts["yes"] = "Yes";
         englishTexts["no"] = "No";
 
+        // Input validation error messages
+        englishTexts["invalid_isbn"] = "Invalid ISBN format. ISBN can only contain digits, spaces, and hyphens (max 50 characters).";
+        englishTexts["invalid_title"] = "Title cannot be empty.";
+        englishTexts["invalid_quantity"] = "Invalid quantity. Quantity cannot be negative.";
+        englishTexts["invalid_student_id"] = "Invalid student ID format. Student ID must be 5-15 alphanumeric characters.";
+        englishTexts["invalid_name"] = "Name cannot be empty.";
+        englishTexts["invalid_token"] = "Invalid token format. Token must be at least 4 characters.";
+        englishTexts["invalid_username"] = "Invalid username format. Username must be 3-20 alphanumeric characters or underscores.";
+        englishTexts["password_too_short"] = "Password must be at least 8 characters.";
+
         // Log management
         englishTexts["log_management"] = "Log Management";
         englishTexts["query_logs_by_time"] = "Query Logs by Time";
@@ -480,6 +490,16 @@ private:
         chineseTexts["message"] = "消息";
         chineseTexts["no_logs_found"] = "未找到日志";
         chineseTexts["total_logs"] = "总日志数";
+
+        // Input validation error messages (Chinese)
+        chineseTexts["invalid_isbn"] = "无效的 ISBN 格式。ISBN 只能包含数字、空格和连字符（最多 50 个字符）。";
+        chineseTexts["invalid_title"] = "书名不能为空。";
+        chineseTexts["invalid_quantity"] = "无效的数量。数量不能为负数。";
+        chineseTexts["invalid_student_id"] = "无效的学号格式。学号必须是 5-15 个字母或数字。";
+        chineseTexts["invalid_name"] = "姓名不能为空。";
+        chineseTexts["invalid_token"] = "无效的口令格式。口令必须至少 4 个字符。";
+        chineseTexts["invalid_username"] = "无效的用户名格式。用户名必须是 3-20 个字母、数字或下划线。";
+        chineseTexts["password_too_short"] = "密码必须至少 8 个字符。";
 
         // Security features - account lockout and forced password change
         englishTexts["account_locked"] = "Account is locked due to too many failed login attempts. Try again in ";

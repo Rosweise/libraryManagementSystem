@@ -93,6 +93,67 @@ struct SystemStats {  // 系统统计信息结构体
     int topBorrowedBookCount = 0;
 };
 
+// RAII wrapper for SQLite statements - prevents resource leaks
+class SQLiteStatement {
+public:
+    explicit SQLiteStatement(sqlite3* db, const std::string& sql) : stmt_(nullptr) {
+        sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt_, nullptr);
+    }
+    
+    ~SQLiteStatement() {
+        if (stmt_) {
+            sqlite3_finalize(stmt_);
+        }
+    }
+    
+    // Disable copy
+    SQLiteStatement(const SQLiteStatement&) = delete;
+    SQLiteStatement& operator=(const SQLiteStatement&) = delete;
+    
+    // Enable move
+    SQLiteStatement(SQLiteStatement&& other) noexcept : stmt_(other.stmt_) {
+        other.stmt_ = nullptr;
+    }
+    
+    SQLiteStatement& operator=(SQLiteStatement&& other) noexcept {
+        if (this != &other) {
+            if (stmt_) sqlite3_finalize(stmt_);
+            stmt_ = other.stmt_;
+            other.stmt_ = nullptr;
+        }
+        return *this;
+    }
+    
+    sqlite3_stmt* get() const { return stmt_; }
+    operator bool() const { return stmt_ != nullptr; }
+    
+private:
+    sqlite3_stmt* stmt_;
+};
+
+// RAII wrapper for SQLite database connections
+class SQLiteConnection {
+public:
+    explicit SQLiteConnection(const std::string& db_path) : db_(nullptr) {
+        sqlite3_open(db_path.c_str(), &db_);
+    }
+    
+    ~SQLiteConnection() {
+        if (db_) {
+            sqlite3_close(db_);
+        }
+    }
+    
+    // Disable copy
+    SQLiteConnection(const SQLiteConnection&) = delete;
+    SQLiteConnection& operator=(const SQLiteConnection&) = delete;
+    
+    sqlite3* get() const { return db_; }
+    operator bool() const { return db_ != nullptr; }
+    
+private:
+    sqlite3* db_;
+};
 
 class DatabaseManager {
 public:
@@ -101,6 +162,13 @@ public:
     ~DatabaseManager();
 
     bool initialize();
+
+    // Input validation helpers
+    static bool isValidUsername(const std::string& username);
+    static bool isValidPassword(const std::string& password);
+    static bool isValidStudentId(const std::string& studentId);
+    static bool isValidISBN(const std::string& isbn);
+    static bool isValidRecoveryToken(const std::string& token);
 
     // 用户管理
     bool addUser(const User &user, const std::string &password, bool needsPasswordChange = false) const;

@@ -80,7 +80,27 @@ constexpr int LOCKOUT_MINUTES = 5;           // 锁定 5 分钟
 
 // 验证密码是否满足最低安全要求（至少8个字符）
 static bool isValidPassword(const std::string &pwd) {
-    return pwd.length() >= 8;
+    return DatabaseManager::isValidPassword(pwd);
+}
+
+// Validate username format
+static bool isValidUsername(const std::string &username) {
+    return DatabaseManager::isValidUsername(username);
+}
+
+// Validate student ID format
+static bool isValidStudentId(const std::string &studentId) {
+    return DatabaseManager::isValidStudentId(studentId);
+}
+
+// Validate ISBN format
+static bool isValidISBN(const std::string &isbn) {
+    return DatabaseManager::isValidISBN(isbn);
+}
+
+// Validate recovery token format
+static bool isValidRecoveryToken(const std::string &token) {
+    return DatabaseManager::isValidRecoveryToken(token);
 }
 
 
@@ -620,8 +640,24 @@ void handleAddBook(const DatabaseManager &db) {
     std::cout << "--- " << _("add_new_book") << " ---\n";
     std::cout << _("isbn_prompt");
     std::getline(std::cin, b.isbn);
+    
+    // Validate ISBN
+    if (!isValidISBN(b.isbn)) {
+        std::cout << _("invalid_isbn") << "\n";
+        pause();
+        return;
+    }
+    
     std::cout << _("title_prompt");
     std::getline(std::cin, b.title);
+    
+    // Validate title (non-empty)
+    if (b.title.empty()) {
+        std::cout << _("invalid_title") << "\n";
+        pause();
+        return;
+    }
+    
     std::cout << _("author_prompt");
     std::getline(std::cin, b.author);
     std::cout << _("publisher_prompt");
@@ -630,6 +666,14 @@ void handleAddBook(const DatabaseManager &db) {
     std::getline(std::cin, b.category);
     std::cout << _("total_copies_prompt");
     b.totalCopies = getIntInput();
+    
+    // Validate quantity
+    if (b.totalCopies < 0) {
+        std::cout << _("invalid_quantity") << "\n";
+        pause();
+        return;
+    }
+    
     b.availableCopies = b.totalCopies;
 
     if (db.addBook(b)) {
@@ -957,6 +1001,13 @@ void handleRegister(const DatabaseManager &db) {
     std::getline(std::cin, newUser.id);
     newUser.username = newUser.id;
 
+    // Validate student ID / username format
+    if (!isValidStudentId(newUser.id)) {
+        std::cout << _("invalid_student_id") << "\n";
+        pause();
+        return;
+    }
+
     if (db.userExists(newUser.username)) {
         std::cout << _("id_already_exists") << "\n";
         pause();
@@ -965,6 +1016,14 @@ void handleRegister(const DatabaseManager &db) {
 
     std::cout << _("real_name_prompt");
     std::getline(std::cin, newUser.name);
+    
+    // Validate name (non-empty)
+    if (newUser.name.empty()) {
+        std::cout << _("invalid_name") << "\n";
+        pause();
+        return;
+    }
+    
     std::cout << _("college_prompt");
     std::getline(std::cin, newUser.college);
     std::cout << _("class_prompt");
@@ -1150,6 +1209,13 @@ void handleSetRecoveryToken(const DatabaseManager &db, User &currentUser) {
 
     if (token.empty()) {
         std::cout << _("token_empty_error") << "\n";
+        pause();
+        return;
+    }
+    
+    // Validate recovery token (minimum 4 characters)
+    if (!isValidRecoveryToken(token)) {
+        std::cout << _("invalid_token") << "\n";
         pause();
         return;
     }

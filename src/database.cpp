@@ -169,180 +169,147 @@ bool DatabaseManager::initialize() {
 bool DatabaseManager::addUser(const User &user, const std::string &password, bool needsPasswordChange) const {
     const std::string sql =
             "INSERT INTO Users (id, username, password_hash, password_salt, name, college, className, role, recovery_token_hash, password_needs_change) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?);";
-    sqlite3_stmt *stmt;
-    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+    
+    SQLiteStatement stmt(db_, sql);
+    if (!stmt) {
         std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db_) << std::endl;
         return false;
     }
 
-    // RAII wrapper for sqlite3_stmt to ensure proper cleanup
-    struct StmtWrapper {
-        sqlite3_stmt* stmt;
-        StmtWrapper(sqlite3_stmt* s) : stmt(s) {}
-        ~StmtWrapper() { if (stmt) sqlite3_finalize(stmt); }
-        sqlite3_stmt* operator->() { return stmt; }
-        operator sqlite3_stmt*() { return stmt; }
-    } stmt_wrapper(stmt);
-
     const std::string salt = generateSalt();
     const std::string hashedPassword = hashPassword(password, salt);
-    sqlite3_bind_text(stmt, 1, user.id.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, user.username.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 3, hashedPassword.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 4, salt.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 5, user.name.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 6, user.college.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 7, user.className.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 8, user.role.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_int(stmt, 9, needsPasswordChange ? 1 : 0);
+    sqlite3_bind_text(stmt.get(), 1, user.id.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 2, user.username.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 3, hashedPassword.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 4, salt.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 5, user.name.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 6, user.college.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 7, user.className.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 8, user.role.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt.get(), 9, needsPasswordChange ? 1 : 0);
 
-    bool success = (sqlite3_step(stmt) == SQLITE_DONE);
+    bool success = (sqlite3_step(stmt.get()) == SQLITE_DONE);
     if (!success) {
         std::cerr << "Execution failed: " << sqlite3_errmsg(db_) << std::endl;
     }
-    // stmt will be automatically finalized by the wrapper
     return success;
 }
 
 bool DatabaseManager::userExists(const std::string &username) const {
     const std::string sql = "SELECT 1 FROM Users WHERE username = ?;";
-    sqlite3_stmt *stmt;
-    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+    
+    SQLiteStatement stmt(db_, sql);
+    if (!stmt) {
         std::cerr << "Failed to prepare statement in userExists: " << sqlite3_errmsg(db_) << std::endl;
         return false;
     }
 
-    // RAII wrapper for sqlite3_stmt to ensure proper cleanup
-    struct StmtWrapper {
-        sqlite3_stmt* stmt;
-        StmtWrapper(sqlite3_stmt* s) : stmt(s) {}
-        ~StmtWrapper() { if (stmt) sqlite3_finalize(stmt); }
-        sqlite3_stmt* operator->() { return stmt; }
-        operator sqlite3_stmt*() { return stmt; }
-    } stmt_wrapper(stmt);
-
-    sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
-    bool exists = (sqlite3_step(stmt) == SQLITE_ROW);
-    // stmt will be automatically finalized by the wrapper
+    sqlite3_bind_text(stmt.get(), 1, username.c_str(), -1, SQLITE_STATIC);
+    bool exists = (sqlite3_step(stmt.get()) == SQLITE_ROW);
     return exists;
 }
 
 
 User DatabaseManager::authenticateUser(const std::string &username, const std::string &password) const {
     User user;
-    user.role = ""; // 默认角色为空，表示认证失败
+    user.role = ""; // Default: authentication failed
 
     // First, fetch salt and stored hash for the user
     const std::string salt_sql =
             "SELECT id, name, college, className, role, recovery_token_hash, password_hash, password_salt, password_needs_change FROM Users WHERE username = ?;";
-    sqlite3_stmt *stmt;
-
-    if (sqlite3_prepare_v2(db_, salt_sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+    
+    SQLiteStatement stmt(db_, salt_sql);
+    if (!stmt) {
         std::cerr << "Failed to prepare statement in authenticateUser: " << sqlite3_errmsg(db_) << std::endl;
         return user;
     }
 
-    // RAII wrapper for sqlite3_stmt to ensure proper cleanup
-    struct StmtWrapper {
-        sqlite3_stmt* stmt;
-        StmtWrapper(sqlite3_stmt* s) : stmt(s) {}
-        ~StmtWrapper() { if (stmt) sqlite3_finalize(stmt); }
-        sqlite3_stmt* operator->() { return stmt; }
-        operator sqlite3_stmt*() { return stmt; }
-    } stmt_wrapper(stmt);
+    sqlite3_bind_text(stmt.get(), 1, username.c_str(), -1, SQLITE_STATIC);
 
-    sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
-
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
-        const char *stored_hash = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 6));
-        const char *salt_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 7));
+    if (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+        const char *stored_hash = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 6));
+        const char *salt_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 7));
         const std::string salt = salt_text ? salt_text : "";
         const std::string computedHash = hashPassword(password, salt);
 
         if (stored_hash && computedHash == std::string(stored_hash)) {
-            user.id = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
+            user.id = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 0));
             user.username = username;
-            const char *name_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
+            const char *name_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 1));
             user.name = name_text ? name_text : "";
-            const char *college_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2));
+            const char *college_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 2));
             user.college = college_text ? college_text : "";
-            const char *class_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3));
+            const char *class_text = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 3));
             user.className = class_text ? class_text : "";
-            user.role = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4));
-            user.hasRecoveryToken = (sqlite3_column_type(stmt, 5) != SQLITE_NULL);
-            user.passwordNeedsChange = (sqlite3_column_int(stmt, 8) == 1);
+            user.role = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 4));
+            user.hasRecoveryToken = (sqlite3_column_type(stmt.get(), 5) != SQLITE_NULL);
+            user.passwordNeedsChange = (sqlite3_column_int(stmt.get(), 8) == 1);
         }
     }
 
-    // stmt will be automatically finalized by the wrapper
     return user;
 }
 
 bool DatabaseManager::updateStudentInfo(const User &user) const {
     const std::string sql = "UPDATE Users SET name = ?, college = ?, className = ? WHERE id = ?;";
-    sqlite3_stmt *stmt;
-    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return false;
+    
+    SQLiteStatement stmt(db_, sql);
+    if (!stmt) return false;
 
-    sqlite3_bind_text(stmt, 1, user.name.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, user.college.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 3, user.className.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 4, user.id.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 1, user.name.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 2, user.college.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 3, user.className.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 4, user.id.c_str(), -1, SQLITE_STATIC);
 
-    const bool success = (sqlite3_step(stmt) == SQLITE_DONE);
-    sqlite3_finalize(stmt);
-    return success;
+    return (sqlite3_step(stmt.get()) == SQLITE_DONE);
 }
 
 bool DatabaseManager::updatePassword(const std::string &username, const std::string &newPassword) const {
     const std::string sql = "UPDATE Users SET password_hash = ?, password_salt = ?, password_needs_change = 0 WHERE username = ?;";
-    sqlite3_stmt *stmt;
-    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return false;
+    
+    SQLiteStatement stmt(db_, sql);
+    if (!stmt) return false;
 
     const std::string salt = generateSalt();
     const std::string hashedPassword = hashPassword(newPassword, salt);
-    sqlite3_bind_text(stmt, 1, hashedPassword.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, salt.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 3, username.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 1, hashedPassword.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 2, salt.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 3, username.c_str(), -1, SQLITE_STATIC);
 
-    const bool success = (sqlite3_step(stmt) == SQLITE_DONE);
-    sqlite3_finalize(stmt);
-    return success;
+    return (sqlite3_step(stmt.get()) == SQLITE_DONE);
 }
 
 bool DatabaseManager::updateRecoveryToken(const std::string &username, const std::string &token) const {
     const std::string sql = "UPDATE Users SET recovery_token_hash = ? WHERE username = ?;";
-    sqlite3_stmt *stmt;
-    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return false;
+    
+    SQLiteStatement stmt(db_, sql);
+    if (!stmt) return false;
 
     const std::string hashedToken = SHA256::hash(token);
-    sqlite3_bind_text(stmt, 1, hashedToken.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, username.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 1, hashedToken.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 2, username.c_str(), -1, SQLITE_STATIC);
 
-    bool success = (sqlite3_step(stmt) == SQLITE_DONE);
-    sqlite3_finalize(stmt);
-    return success;
+    return (sqlite3_step(stmt.get()) == SQLITE_DONE);
 }
 
 bool DatabaseManager::recoverPassword(const std::string &username, const std::string &token,
                                       const std::string &newPassword) const {
     const std::string sql = "UPDATE Users SET password_hash = ?, password_salt = ? WHERE username = ? AND recovery_token_hash = ?;";
-    sqlite3_stmt *stmt;
-    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return false;
+    
+    SQLiteStatement stmt(db_, sql);
+    if (!stmt) return false;
 
     const std::string newSalt = generateSalt();
     const std::string newHashedPassword = hashPassword(newPassword, newSalt);
     const std::string hashedToken = SHA256::hash(token);
 
-    sqlite3_bind_text(stmt, 1, newHashedPassword.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, newSalt.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 3, username.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 4, hashedToken.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 1, newHashedPassword.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 2, newSalt.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 3, username.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 4, hashedToken.c_str(), -1, SQLITE_STATIC);
 
-    const bool success = (sqlite3_step(stmt) == SQLITE_DONE);
-
-    // 检查是否有行被实际更新
+    const bool success = (sqlite3_step(stmt.get()) == SQLITE_DONE);
     const int changes = sqlite3_changes(db_);
-    sqlite3_finalize(stmt);
 
     return success && (changes > 0);
 }
@@ -351,54 +318,51 @@ bool DatabaseManager::recoverPassword(const std::string &username, const std::st
 bool DatabaseManager::addBook(const Book &book) const {
     const  std::string sql =
             "INSERT INTO Books (isbn, title, author, publisher, category, totalCopies, availableCopies) VALUES (?, ?, ?, ?, ?, ?, ?);";
-    sqlite3_stmt *stmt;
-    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return false;
+    
+    SQLiteStatement stmt(db_, sql);
+    if (!stmt) return false;
 
-    sqlite3_bind_text(stmt, 1, book.isbn.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, book.title.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 3, book.author.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 4, book.publisher.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 5, book.category.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_int(stmt, 6, book.totalCopies);
-    sqlite3_bind_int(stmt, 7, book.availableCopies);
+    sqlite3_bind_text(stmt.get(), 1, book.isbn.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 2, book.title.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 3, book.author.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 4, book.publisher.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 5, book.category.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt.get(), 6, book.totalCopies);
+    sqlite3_bind_int(stmt.get(), 7, book.availableCopies);
 
-    bool success = (sqlite3_step(stmt) == SQLITE_DONE);
-    sqlite3_finalize(stmt);
-    return success;
+    return (sqlite3_step(stmt.get()) == SQLITE_DONE);
 }
 
 bool DatabaseManager::updateBook(const Book &book) const {
     const std::string sql =
             "UPDATE Books SET title = ?, author = ?, publisher = ?, category = ?, totalCopies = ?, availableCopies = ? WHERE isbn = ?;";
-    sqlite3_stmt *stmt;
-    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return false;
+    
+    SQLiteStatement stmt(db_, sql);
+    if (!stmt) return false;
 
-    sqlite3_bind_text(stmt, 1, book.title.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, book.author.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 3, book.publisher.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 4, book.category.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_int(stmt, 5, book.totalCopies);
-    sqlite3_bind_int(stmt, 6, book.availableCopies);
-    sqlite3_bind_text(stmt, 7, book.isbn.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 1, book.title.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 2, book.author.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 3, book.publisher.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 4, book.category.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt.get(), 5, book.totalCopies);
+    sqlite3_bind_int(stmt.get(), 6, book.availableCopies);
+    sqlite3_bind_text(stmt.get(), 7, book.isbn.c_str(), -1, SQLITE_STATIC);
 
-    const bool success = (sqlite3_step(stmt) == SQLITE_DONE);
-    sqlite3_finalize(stmt);
-    return success;
+    return (sqlite3_step(stmt.get()) == SQLITE_DONE);
 }
 
 bool DatabaseManager::deleteBook(const std::string &isbn) const {
     const std::string sql = "DELETE FROM Books WHERE isbn = ?;";
-    sqlite3_stmt *stmt;
-    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return false;
-    sqlite3_bind_text(stmt, 1, isbn.c_str(), -1, SQLITE_STATIC);
-    const bool success = (sqlite3_step(stmt) == SQLITE_DONE);
-    sqlite3_finalize(stmt);
-    return success;
+    
+    SQLiteStatement stmt(db_, sql);
+    if (!stmt) return false;
+    sqlite3_bind_text(stmt.get(), 1, isbn.c_str(), -1, SQLITE_STATIC);
+    return (sqlite3_step(stmt.get()) == SQLITE_DONE);
 }
 
 std::vector<Book> DatabaseManager::findBooks(const std::string &keyword, const std::string &sortBy) const {
     std::vector<Book> books;
-    
+
     // Whitelist allowed sort fields to prevent SQL injection
     std::string safeSortBy = "title"; // Default to a safe value
     if (sortBy == "title") {
@@ -416,32 +380,31 @@ std::vector<Book> DatabaseManager::findBooks(const std::string &keyword, const s
     } else if (sortBy == "availableCopies") {
         safeSortBy = "availableCopies";
     }
-    
-    const std::string sql = "SELECT * FROM Books WHERE title LIKE ? OR author LIKE ? OR isbn LIKE ? ORDER BY " + safeSortBy + " COLLATE NOCASE;";
-    sqlite3_stmt *stmt;
 
-    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+    const std::string sql = "SELECT * FROM Books WHERE title LIKE ? OR author LIKE ? OR isbn LIKE ? ORDER BY " + safeSortBy + " COLLATE NOCASE;";
+    SQLiteStatement stmt(db_, sql);
+
+    if (!stmt) {
         std::cerr << "Failed to prepare statement in findBooks: " << sqlite3_errmsg(db_) << std::endl;
         return books;
     }
 
     const std::string like_pattern = "%" + keyword + "%";
-    sqlite3_bind_text(stmt, 1, like_pattern.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, like_pattern.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 3, like_pattern.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 1, like_pattern.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 2, like_pattern.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 3, like_pattern.c_str(), -1, SQLITE_STATIC);
 
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
+    while (sqlite3_step(stmt.get()) == SQLITE_ROW) {
         Book b;
-        b.isbn = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
-        b.title = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
-        b.author = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2));
-        b.publisher = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3));
-        b.category = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4));
-        b.totalCopies = sqlite3_column_int(stmt, 5);
-        b.availableCopies = sqlite3_column_int(stmt, 6);
+        b.isbn = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 0));
+        b.title = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 1));
+        b.author = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 2));
+        b.publisher = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 3));
+        b.category = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 4));
+        b.totalCopies = sqlite3_column_int(stmt.get(), 5);
+        b.availableCopies = sqlite3_column_int(stmt.get(), 6);
         books.push_back(b);
     }
-    sqlite3_finalize(stmt);
     return books;
 }
 
@@ -451,7 +414,7 @@ std::vector<Book> DatabaseManager::getAllBooks(const std::string &sortBy) const 
 
 std::vector<Book> DatabaseManager::findBooksWithPagination(const std::string &keyword, const std::string &sortBy, int offset, int limit) const {
     std::vector<Book> books;
-    
+
     // Whitelist allowed sort fields to prevent SQL injection
     std::string safeSortBy = "title"; // Default to a safe value
     if (sortBy == "title") {
@@ -469,34 +432,33 @@ std::vector<Book> DatabaseManager::findBooksWithPagination(const std::string &ke
     } else if (sortBy == "availableCopies") {
         safeSortBy = "availableCopies";
     }
-    
-    const std::string sql = "SELECT * FROM Books WHERE title LIKE ? OR author LIKE ? OR isbn LIKE ? ORDER BY " + safeSortBy + " COLLATE NOCASE LIMIT ? OFFSET ?;";
-    sqlite3_stmt *stmt;
 
-    if (sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+    const std::string sql = "SELECT * FROM Books WHERE title LIKE ? OR author LIKE ? OR isbn LIKE ? ORDER BY " + safeSortBy + " COLLATE NOCASE LIMIT ? OFFSET ?;";
+    SQLiteStatement stmt(db_, sql);
+
+    if (!stmt) {
         std::cerr << "Failed to prepare statement in findBooksWithPagination: " << sqlite3_errmsg(db_) << std::endl;
         return books;
     }
 
     const std::string like_pattern = "%" + keyword + "%";
-    sqlite3_bind_text(stmt, 1, like_pattern.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, like_pattern.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 3, like_pattern.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_int(stmt, 4, limit);
-    sqlite3_bind_int(stmt, 5, offset);
+    sqlite3_bind_text(stmt.get(), 1, like_pattern.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 2, like_pattern.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt.get(), 3, like_pattern.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt.get(), 4, limit);
+    sqlite3_bind_int(stmt.get(), 5, offset);
 
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
+    while (sqlite3_step(stmt.get()) == SQLITE_ROW) {
         Book b;
-        b.isbn = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
-        b.title = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
-        b.author = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2));
-        b.publisher = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3));
-        b.category = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4));
-        b.totalCopies = sqlite3_column_int(stmt, 5);
-        b.availableCopies = sqlite3_column_int(stmt, 6);
+        b.isbn = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 0));
+        b.title = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 1));
+        b.author = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 2));
+        b.publisher = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 3));
+        b.category = reinterpret_cast<const char *>(sqlite3_column_text(stmt.get(), 4));
+        b.totalCopies = sqlite3_column_int(stmt.get(), 5);
+        b.availableCopies = sqlite3_column_int(stmt.get(), 6);
         books.push_back(b);
     }
-    sqlite3_finalize(stmt);
     return books;
 }
 

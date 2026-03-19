@@ -26,6 +26,7 @@ add_executable(${CMAKE_PROJECT_NAME}
         src/sha256.cpp
         src/logger.cpp
         src/logging_functions.cpp
+        src/validation.cpp
         ${sqlite3_SOURCE_DIR}/sqlite3.c
 )
 
